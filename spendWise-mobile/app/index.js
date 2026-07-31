@@ -1,5 +1,5 @@
-import Dashboard from '../src/screens/Dashboard';
+import Login from '../src/screens/Login';
 
 export default function Index() {
-  return <Dashboard />;
+  return <Login />;
 }

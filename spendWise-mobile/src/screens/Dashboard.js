@@ -1,24 +1,27 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { auth, signOut } from '../config/firebase';
 
-const transactions = [
-  { id: '1', title: 'Groceries', amount: '-$45.00', date: 'Today', type: 'expense', icon: require('../../assets/groceries.png') },
-  { id: '2', title: 'Salary', amount: '+$3,200.00', date: 'Yesterday', type: 'income', icon: require('../../assets/salary.png') },
-  { id: '3', title: 'Coffee Shop', amount: '-$4.50', date: 'Yesterday', type: 'expense', icon: require('../../assets/coffee.png') },
-  { id: '4', title: 'Electric Bill', amount: '-$80.00', date: 'Jul 28', type: 'expense', icon: require('../../assets/electric.png') },
-];
 
-const actions = [
-  { name: 'Send', icon: require('../../assets/send.png') },
-  { name: 'Receive', icon: require('../../assets/receive.png') },
-  { name: 'Top Up', icon: require('../../assets/topup.png') },
-  { name: 'More', icon: require('../../assets/more.png') },
-];
 
 export default function Dashboard() {
+  const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(menuAnim, {
+      toValue: isMenuOpen ? 1 : 0,
+      useNativeDriver: true,
+      bounciness: 12,
+      speed: 14,
+    }).start();
+  }, [isMenuOpen]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       
@@ -32,88 +35,72 @@ export default function Dashboard() {
           />
           <Text style={styles.navTitle}>SpendWise</Text>
         </View>
-        <TouchableOpacity>
-          <Ionicons name="menu" size={28} color="#1f2937" />
-        </TouchableOpacity>
+        <View style={{ zIndex: 10 }}>
+          <TouchableOpacity onPress={() => setIsMenuOpen(!isMenuOpen)}>
+            <Animated.View style={{ 
+              transform: [{ 
+                rotate: menuAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '90deg'] }) 
+              }] 
+            }}>
+              <Ionicons name={isMenuOpen ? "close" : "menu"} size={28} color="#3b82f6" />
+            </Animated.View>
+          </TouchableOpacity>
+          
+          <Animated.View 
+            pointerEvents={isMenuOpen ? 'auto' : 'none'}
+            style={[styles.dropdownMenu, {
+              opacity: menuAnim,
+              transform: [{
+                translateX: menuAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [40, 0]
+                })
+              }, {
+                scale: menuAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.85, 1]
+                })
+              }]
+            }]}
+          >
+            <TouchableOpacity 
+              style={styles.dropdownItem}
+              onPress={async () => {
+                try {
+                  await signOut(auth);
+                  router.replace('/');
+                } catch (error) {
+                  console.error('Logout error:', error);
+                }
+              }}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
-        
-        {/* Header greeting */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Good Morning,</Text>
-            <Text style={styles.userName}>Alex 👏</Text>
-          </View>
-          <TouchableOpacity>
-            <ExpoImage source={require('../../assets/profile.png')} style={styles.profilePic} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Balance Card */}
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Total Balance</Text>
-          <Text style={styles.balanceAmount}>$4,850.50</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: '#4ade80' }]} />
-              <View>
-                <Text style={styles.statLabel}>Income</Text>
-                <Text style={styles.statValue}>$5,000</Text>
-              </View>
-            </View>
-            <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: '#f87171' }]} />
-              <View>
-                <Text style={styles.statLabel}>Expenses</Text>
-                <Text style={styles.statValue}>$149.50</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          {actions.map((action, index) => (
-            <TouchableOpacity key={index} style={styles.actionBtn}>
-              <View style={styles.actionIconContainer}>
-                <ExpoImage source={action.icon} style={styles.actionIcon} />
-              </View>
-              <Text style={styles.actionText}>{action.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Recent Transactions */}
-        <View style={styles.transactionsSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.spendingsCard}>
+          <Text style={styles.welcomeText}>Welcome, User 👋</Text>
           
-          {transactions.map((item) => (
-            <View key={item.id} style={styles.transactionItem}>
-              <View style={styles.transactionLeft}>
-                <View style={styles.transactionIconContainer}>
-                  <ExpoImage source={item.icon} style={styles.transactionIcon} />
-                </View>
-                <View>
-                  <Text style={styles.transactionTitle}>{item.title}</Text>
-                  <Text style={styles.transactionDate}>{item.date}</Text>
-                </View>
-              </View>
-              <Text 
-                style={[
-                  styles.transactionAmount, 
-                  { color: item.type === 'income' ? '#10b981' : '#1f2937' }
-                ]}
-              >
-                {item.amount}
-              </Text>
+          <Text style={styles.spendingsTitle}>Total Spendings</Text>
+          
+          <View style={styles.spendingsRow}>
+            <View style={styles.spendingItem}>
+              <Text style={styles.spendingLabel}>Today</Text>
+              <Text style={styles.spendingAmount}>$45.00</Text>
             </View>
-          ))}
+            <View style={styles.spendingItem}>
+              <Text style={styles.spendingLabel}>This Week</Text>
+              <Text style={styles.spendingAmount}>$120.50</Text>
+            </View>
+            <View style={styles.spendingItem}>
+              <Text style={styles.spendingLabel}>This Month</Text>
+              <Text style={styles.spendingAmount}>$450.00</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
@@ -138,7 +125,7 @@ export default function Dashboard() {
 
         {/* Right Side: Placeholder for now */}
         <TouchableOpacity style={styles.bottomNavItem}>
-          <Ionicons name="apps-outline" size={26} color="#9ca3af" />
+          <Ionicons name="apps-outline" size={26} color="#64748b" />
         </TouchableOpacity>
       </View>
 
@@ -149,7 +136,7 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#d1fae5',
   },
   topNav: {
     flexDirection: 'row',
@@ -158,7 +145,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 8,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#d1fae5',
+    zIndex: 10,
   },
   navLogoContainer: {
     flexDirection: 'row',
@@ -172,15 +160,63 @@ const styles = StyleSheet.create({
   navTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#1f2937',
+    color: '#1e3a8a',
     letterSpacing: -0.5,
   },
   container: {
     flex: 1,
+    backgroundColor: '#f9fafb',
   },
   contentContainer: {
     padding: 24,
     paddingBottom: 100, // Make room for the bottom nav
+  },
+  spendingsCard: {
+    backgroundColor: '#1e3a8a',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 32,
+    shadowColor: '#1e3a8a',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 32,
+  },
+  spendingsTitle: {
+    color: '#93c5fd',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  spendingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 16,
+    padding: 16,
+  },
+  spendingItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  spendingLabel: {
+    color: '#bfdbfe',
+    fontSize: 12,
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  spendingAmount: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   header: {
     flexDirection: 'row',
@@ -352,10 +388,10 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#d1fae5',
     height: 80,
     borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: '#a7f3d0',
     justifyContent: 'space-around',
     alignItems: 'center',
     position: 'absolute',
@@ -398,5 +434,31 @@ const styles = StyleSheet.create({
     width: 26,
     height: 26,
     tintColor: '#ffffff',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 45,
+    right: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
+    minWidth: 160,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  logoutText: {
+    marginLeft: 12,
+    fontSize: 17,
+    color: '#ef4444',
+    fontWeight: '600',
   }
 });
