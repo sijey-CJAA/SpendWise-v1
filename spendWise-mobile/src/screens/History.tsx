@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import BottomNavBar from '../components/BottomNavBar';
+import TopNavBar from '../components/TopNavBar';
 
 export default function History() {
   const router = useRouter();
@@ -19,19 +20,8 @@ export default function History() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      {/* TopAppBar */}
-      <View className="bg-surface flex-row justify-between items-center px-margin-mobile py-stack-md w-full sticky top-0 z-40">
-        <View className="flex-row items-center gap-2">
-          <Image 
-            source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAoyaLkA5l8HgDWKFrosskoQxWvuDfmop7wMS4RHwv-L_8pWDl3AcuZHdvSY_8PU2XZqnE6kFKIatMIXAM51KwTIIPFVQoPzIaAySz_TFrMPABHe7bkgIN4LCbws0FytYYS38P4vYrQhc7jYujuc6fWo9QRhfwxmw4xJldhOcZ5dKI_z50V8QB8vutJdv8Zg3OFpnRQ4b-DwDbmgPnroD1_acGnfWwt58E9AIggCbDE3DTtViRZdh9i' }}
-            className="w-10 h-10 rounded-full"
-          />
-        </View>
-        <Text className="text-[20px] text-primary font-extrabold tracking-tight">SpendWise</Text>
-        <TouchableOpacity className="active:scale-95 transition-transform duration-150">
-          <Ionicons name="notifications-outline" size={24} color="#4a454d" />
-        </TouchableOpacity>
-      </View>
+      {/* Top Navbar */}
+      <TopNavBar />
 
       <ScrollView className="flex-1 px-margin-mobile pt-stack-md max-w-2xl mx-auto w-full" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         <View className="flex-row justify-between items-center mb-stack-md">

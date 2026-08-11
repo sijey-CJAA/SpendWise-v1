@@ -1,17 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AddExpenseModal from './AddExpenseModal';
 
 interface BottomNavBarProps {
-  currentRoute: 'home' | 'expenses' | 'utang' | 'profile';
+  currentRoute: 'home' | 'expenses' | 'share' | 'profile';
 }
 
 export default function BottomNavBar({ currentRoute }: BottomNavBarProps) {
   const router = useRouter();
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
   return (
-    <View 
+    <>
+      <View 
       className="absolute bottom-0 left-0 w-full z-50 flex-row justify-around items-center px-4 py-2 pb-6 rounded-t-xl bg-surface/90"
       style={{
         shadowColor: '#1c0832',
@@ -45,7 +48,7 @@ export default function BottomNavBar({ currentRoute }: BottomNavBarProps) {
       {/* Add Expense (Floating button) */}
       <TouchableOpacity 
         className="flex-col items-center justify-center -mt-6 hover:bg-surface-container-high rounded-full transition-opacity"
-        onPress={() => router.push('/add-expense')}
+        onPress={() => setIsAddExpenseOpen(true)}
         style={{ outlineStyle: 'none' } as any}
       >
         <View 
@@ -63,14 +66,14 @@ export default function BottomNavBar({ currentRoute }: BottomNavBarProps) {
         <Text className="text-[12px] mt-1 opacity-0">Add</Text>
       </TouchableOpacity>
 
-      {/* Utang */}
+      {/* Shared */}
       <TouchableOpacity 
-        className={`flex-col items-center justify-center p-2 rounded-full transition-opacity ${currentRoute === 'utang' ? 'bg-secondary-container scale-90' : 'hover:bg-surface-container-high'}`}
-        onPress={() => router.push('/utang')}
+        className={`flex-col items-center justify-center p-2 rounded-full transition-opacity ${currentRoute === 'share' ? 'bg-secondary-container scale-90' : 'hover:bg-surface-container-high'}`}
+        onPress={() => router.push('/share')}
         style={{ outlineStyle: 'none' } as any}
       >
-        <Ionicons name={currentRoute === 'utang' ? 'people' : 'people-outline'} size={24} color={currentRoute === 'utang' ? '#41627c' : 'rgba(65, 98, 124, 0.5)'} />
-        <Text className={`text-[12px] mt-1 ${currentRoute === 'utang' ? 'text-secondary font-bold' : 'text-secondary/50'}`}>Utang</Text>
+        <Ionicons name={currentRoute === 'share' ? 'people' : 'people-outline'} size={24} color={currentRoute === 'share' ? '#41627c' : 'rgba(65, 98, 124, 0.5)'} />
+        <Text className={`text-[12px] mt-1 ${currentRoute === 'share' ? 'text-secondary font-bold' : 'text-secondary/50'}`}>Share</Text>
       </TouchableOpacity>
 
       {/* Profile */}
@@ -82,5 +85,7 @@ export default function BottomNavBar({ currentRoute }: BottomNavBarProps) {
         <Text className={`text-[12px] mt-1 ${currentRoute === 'profile' ? 'text-secondary font-bold' : 'text-secondary/50'}`}>Profile</Text>
       </TouchableOpacity>
     </View>
+    <AddExpenseModal visible={isAddExpenseOpen} onClose={() => setIsAddExpenseOpen(false)} />
+    </>
   );
 }
