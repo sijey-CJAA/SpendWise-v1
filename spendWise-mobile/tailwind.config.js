@@ -54,12 +54,20 @@ module.exports = {
         "on-error": "#ffffff",
         "surface-container-lowest": "#ffffff",
         "on-background": "#1d1b1e",
-        "surface-variant": "#e7e1e5"
+        "surface-variant": "#e7e1e5",
+        "brand-purple": "#2563eb",
+        "brand-light": "#121212",
+        "brand-dark": "#ffffff",
+        "brand-gradient-start": "#1e3a8a",
+        "brand-gradient-end": "#3b82f6",
+        "brand-card-bg": "#1e1e1e"
       },
       borderRadius: {
         "DEFAULT": "0.25rem",
         "lg": "0.5rem",
         "xl": "0.75rem",
+        "2xl": "1rem",
+        "3xl": "1.5rem",
         "full": "9999px"
       },
       spacing: {

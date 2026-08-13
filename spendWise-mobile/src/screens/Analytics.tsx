@@ -1,145 +1,149 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import BottomNavBar from '../components/BottomNavBar';
-import TopNavBar from '../components/TopNavBar';
+import { LinearGradient } from 'expo-linear-gradient';
+import { auth } from '../config/firebase';
+import { subscribeToExpenses } from '../services/expenseService';
 
 export default function Analytics() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('analytics');
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [balance, setBalance] = useState(10000); // Mock initial budget/balance
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const unsubscribe = subscribeToExpenses(user.uid, (data) => {
+      setExpenses(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    let totalSpent = 0;
+    expenses.forEach(exp => {
+      totalSpent += (Number(exp.amount) || 0);
+    });
+    setBalance(totalSpent);
+  }, [expenses]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      {/* Top Navbar */}
-      <TopNavBar />
+    <SafeAreaView className="flex-1 bg-brand-light">
+      <View className="flex-1 w-full relative">
 
-      <ScrollView className="flex-1 px-margin-mobile pt-stack-md max-w-2xl mx-auto w-full" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        {/* Tab Selector */}
-        <View className="flex-row p-1 bg-surface-container rounded-lg mb-stack-lg shadow-sm">
-          <TouchableOpacity 
-            className={`flex-1 py-2 rounded-md ${activeTab === 'analytics' ? 'bg-surface shadow-sm' : ''}`}
-            onPress={() => setActiveTab('analytics')}
+        {/* Custom Header */}
+        <View className="flex-row justify-between items-center px-6 pt-2 pb-4 w-full">
+          <TouchableOpacity
+            className="w-10 h-10 rounded-full border border-[#333333] bg-brand-card-bg justify-center items-center"
+            onPress={() => router.back()}
           >
-            <Text className={`text-center font-bold text-[14px] ${activeTab === 'analytics' ? 'text-primary' : 'text-on-surface-variant'}`}>Analytics</Text>
+            <Ionicons name="chevron-back" size={20} color="#ffffff" />
           </TouchableOpacity>
-          <TouchableOpacity 
-            className={`flex-1 py-2 rounded-md ${activeTab === 'budgets' ? 'bg-surface shadow-sm' : ''}`}
-            onPress={() => setActiveTab('budgets')}
+          <Text className="text-[18px] font-bold text-brand-dark">Activity</Text>
+          <TouchableOpacity className="w-10 h-10 rounded-full border border-[#333333] bg-brand-card-bg justify-center items-center">
+            <Ionicons name="clipboard-outline" size={20} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Main Card with Chart */}
+          <LinearGradient
+            colors={['#1e3a8a', '#3b82f6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="p-6 mb-8 shadow-sm"
+            style={{ borderRadius: 15 }}
           >
-            <Text className={`text-center font-bold text-[14px] ${activeTab === 'budgets' ? 'text-primary' : 'text-on-surface-variant'}`}>Budgets</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Monthly Overview Card */}
-        <View className="bg-surface-container-lowest p-container-padding rounded-xl border border-surface-container-high mb-stack-lg shadow-sm overflow-hidden">
-          {/* Ambient Background (mocked using positioned views) */}
-          <View className="absolute -top-10 -right-10 w-40 h-40 bg-primary-fixed rounded-full opacity-30" />
-          
-          <View className="flex-row justify-between items-start mb-stack-md z-10">
-            <View>
-              <Text className="text-[14px] font-semibold text-on-surface-variant mb-1">Monthly Budget</Text>
-              <Text className="text-[28px] font-bold text-primary">₱10,000</Text>
-            </View>
-            <View className="items-end">
-              <Text className="text-[14px] font-semibold text-on-surface-variant mb-1">Spent</Text>
-              <Text className="text-[20px] font-bold text-error">₱6,450</Text>
-            </View>
-          </View>
-
-          {/* Main Progress Bar */}
-          <View className="w-full h-3 bg-secondary-fixed-dim/30 rounded-full overflow-hidden mb-2 z-10 flex-row">
-            <View className="h-full bg-primary" style={{ width: '64.5%' }} />
-          </View>
-          <View className="flex-row justify-between z-10">
-            <Text className="text-[12px] font-medium text-on-surface-variant">64.5% Used</Text>
-            <Text className="text-[12px] font-medium text-on-surface-variant">₱3,550 Remaining</Text>
-          </View>
-        </View>
-
-        {/* Spending Breakdown */}
-        <View className="bg-surface-container-lowest p-container-padding rounded-xl border border-surface-container-high mb-stack-lg shadow-sm flex-col md:flex-row items-center gap-stack-lg">
-          
-          <View className="relative w-48 h-48 flex-col items-center justify-center mb-4">
-            {/* Horizontal Bar Chart (Mocking Donut Chart for now) */}
-            <View className="w-full h-6 rounded-full flex-row overflow-hidden mb-4 border border-outline-variant/30">
-              <View className="h-full bg-primary" style={{ width: '40%' }} />
-              <View className="h-full bg-secondary" style={{ width: '30%' }} />
-              <View className="h-full bg-tertiary-container" style={{ width: '20%' }} />
-              <View className="h-full bg-outline-variant" style={{ width: '10%' }} />
-            </View>
-            <Text className="text-[12px] font-medium text-on-surface-variant">Total Spent</Text>
-            <Text className="text-[20px] font-bold text-primary">₱6,450</Text>
-          </View>
-
-          <View className="flex-1 w-full gap-3">
-            <Text className="text-[20px] font-bold text-primary mb-2">Categories</Text>
-            
-            {/* Legend Items */}
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <View className="w-3 h-3 rounded-full bg-primary" />
-                <Text className="text-[16px] text-on-surface">Food</Text>
+            <View className="flex-row justify-between items-start mb-6">
+              <View>
+                <Text className="text-white/70 text-[14px] font-medium mb-1">Total Spendings</Text>
+                <Text className="text-white text-[32px] font-bold">₱{balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
               </View>
-              <Text className="text-[14px] font-semibold text-on-surface">₱2,580</Text>
-            </View>
-            
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <View className="w-3 h-3 rounded-full bg-secondary" />
-                <Text className="text-[16px] text-on-surface">Transport</Text>
-              </View>
-              <Text className="text-[14px] font-semibold text-on-surface">₱1,935</Text>
-            </View>
-            
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <View className="w-3 h-3 rounded-full bg-tertiary-container" />
-                <Text className="text-[16px] text-on-surface">Utilities</Text>
-              </View>
-              <Text className="text-[14px] font-semibold text-on-surface">₱1,290</Text>
+              <TouchableOpacity className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center gap-1 shadow-sm">
+                <Text className="text-white font-medium text-[12px]">Month</Text>
+                <Ionicons name="chevron-down" size={14} color="#ffffff" />
+              </TouchableOpacity>
             </View>
 
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <View className="w-3 h-3 rounded-full bg-outline-variant" />
-                <Text className="text-[16px] text-on-surface">Other</Text>
+            {/* Mock Donut Chart */}
+            <View className="items-center justify-center py-4">
+              <View className="w-[200px] h-[200px] rounded-full border-[32px] border-[#997df3] justify-center items-center relative">
+                {/* Simulated segments using absolute positioning borders */}
+                <View className="absolute top-[-32px] left-[-32px] w-[200px] h-[200px] rounded-full border-[32px] border-white border-t-transparent border-r-transparent border-b-transparent transform rotate-45" />
+                <View className="absolute top-[-32px] left-[-32px] w-[200px] h-[200px] rounded-full border-[32px] border-[#4a24c2] border-l-transparent border-r-transparent border-b-transparent transform -rotate-12" />
+                <View className="absolute top-[-32px] left-[-32px] w-[200px] h-[200px] rounded-full border-[32px] border-[#1e1e1e] border-t-transparent border-r-transparent border-b-transparent transform -rotate-90" />
+
+                {/* Center Content */}
+                <View className="items-center justify-center bg-transparent z-10">
+                  <Text className="text-white text-[24px] font-bold">₱{balance.toLocaleString('en-US', { maximumFractionDigits: 0 })}</Text>
+                  <Text className="text-white/70 text-[12px] font-medium mt-1">Total Spent</Text>
+                </View>
               </View>
-              <Text className="text-[14px] font-semibold text-on-surface">₱645</Text>
             </View>
+          </LinearGradient>
+
+          {/* Quick Menu */}
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-[18px] font-bold text-brand-dark">Quick Menu</Text>
+            <TouchableOpacity>
+              <Text className="text-[14px] text-gray-400 font-medium">See all</Text>
+            </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Stats Grid (Bento style) */}
-        <View className="flex-row gap-gutter-md">
-          {/* Compare */}
-          <TouchableOpacity className="flex-1 bg-surface-container-low p-container-padding rounded-xl flex-col justify-between h-32 border border-outline-variant/10 shadow-sm">
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="trending-down-outline" size={16} color="#4a454d" />
-              <Text className="text-[12px] font-medium text-on-surface-variant">vs Last Month</Text>
-            </View>
-            <View>
-              <Text className="text-[28px] font-bold text-primary">-12%</Text>
-              <Text className="text-[12px] font-medium text-tertiary mt-1">₱850 less spent</Text>
-            </View>
-          </TouchableOpacity>
+          <View className="flex-row justify-between mb-8 gap-4">
+            {/* Top up wallet */}
+            <LinearGradient
+              colors={['#1e1e1e', '#1e3a8a']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="flex-1 p-4 shadow-sm border border-[#333333]"
+              style={{ borderRadius: 24 }}
+            >
+              <View className="w-12 h-12 bg-[#333333] rounded-full justify-center items-center mb-6 shadow-sm">
+                <Ionicons name="wallet" size={24} color="#ffffff" />
+              </View>
+              <Text className="text-brand-dark font-bold text-[16px] leading-5">Top up wallet money</Text>
+            </LinearGradient>
 
-          {/* Daily Avg */}
-          <TouchableOpacity className="flex-1 bg-surface-container-low p-container-padding rounded-xl flex-col justify-between h-32 border border-outline-variant/10 shadow-sm">
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="calendar-outline" size={16} color="#4a454d" />
-              <Text className="text-[12px] font-medium text-on-surface-variant">Daily Avg</Text>
-            </View>
-            <View>
-              <Text className="text-[28px] font-bold text-primary">₱430</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            {/* Create budget */}
+            <LinearGradient
+              colors={['#1e1e1e', '#1e3a8a']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="flex-1 rounded-[24px] p-4 shadow-sm border border-[#333333]"
+            >
+              <View className="w-12 h-12 bg-[#333333] rounded-full justify-center items-center mb-6 shadow-sm">
+                <Ionicons name="pie-chart" size={24} color="#ffffff" />
+              </View>
+              <Text className="text-brand-dark font-bold text-[16px] leading-5">Create wallet budget</Text>
+            </LinearGradient>
+          </View>
 
-      {/* Bottom NavBar */}
-      <BottomNavBar currentRoute="expenses" />
+          {/* Payment History */}
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-[18px] font-bold text-brand-dark">Payment History</Text>
+            <TouchableOpacity>
+              <Text className="text-[14px] text-gray-400 font-medium">See all</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="h-10" />
+
+        </ScrollView>
+
+        {/* Bottom NavBar */}
+        <BottomNavBar currentRoute="expenses" />
+
+      </View>
     </SafeAreaView>
   );
 }
