@@ -1,14 +1,40 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AddExpenseModal from './AddExpenseModal';
 
 interface BottomNavBarProps {
-  currentRoute: 'home' | 'expenses' | 'stats' | 'profile';
+  currentRoute: 'home' | 'expenses' | 'stats' | 'profile' | 'share';
 }
 
 export default function BottomNavBar({ currentRoute }: BottomNavBarProps) {
   const router = useRouter();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handleAddPress = () => {
+    // Pulse animation
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.9,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1.1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setIsModalVisible(true);
+    });
+  };
 
   return (
     <View className="absolute bottom-0 left-0 w-full items-center z-50">
@@ -62,6 +88,7 @@ export default function BottomNavBar({ currentRoute }: BottomNavBarProps) {
 
           <TouchableOpacity 
             className="items-center justify-center p-2"
+            onPress={() => router.push('/profile')}
           >
             <Ionicons 
               name={currentRoute === 'profile' ? 'person' : 'person-outline'} 
@@ -74,12 +101,22 @@ export default function BottomNavBar({ currentRoute }: BottomNavBarProps) {
 
       {/* Center FAB overlapping the navbar */}
       <View className="absolute top-0 w-[72px] h-[72px] bg-[#121212] rounded-full justify-center items-center">
-        <TouchableOpacity 
-          className="w-[56px] h-[56px] bg-brand-purple rounded-full justify-center items-center shadow-lg"
-        >
-          <Ionicons name="add" size={32} color="#ffffff" />
-        </TouchableOpacity>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <TouchableOpacity 
+            className="w-[56px] h-[56px] bg-brand-purple rounded-full justify-center items-center shadow-lg"
+            onPress={handleAddPress}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add" size={32} color="#ffffff" />
+          </TouchableOpacity>
+        </Animated.View>
       </View>
+
+      {/* Add Expense Modal */}
+      <AddExpenseModal 
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+      />
     </View>
   );
 }

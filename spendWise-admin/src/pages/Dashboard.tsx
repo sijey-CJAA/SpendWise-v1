@@ -52,17 +52,17 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+    <div className="min-h-screen bg-slate-950">
+      <nav className="bg-slate-900 border-b border-slate-800 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-emerald-50 flex justify-center items-center border border-emerald-100 text-emerald-600 font-bold">
+          <div className="w-10 h-10 rounded-full bg-slate-800 flex justify-center items-center border border-slate-700 text-blue-500 font-bold">
             SW
           </div>
-          <span className="text-xl font-bold text-blue-900">SpendWise Admin</span>
+          <span className="text-xl font-bold text-white">SpendWise Admin</span>
         </div>
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
+          className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors font-medium"
         >
           <LogOut size={18} />
           Logout
@@ -71,17 +71,17 @@ export default function Dashboard() {
 
       <main className="max-w-7xl mx-auto px-8 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-800">Global Expenses Database</h1>
-          <div className="bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
-            <span className="text-sm text-slate-500 font-medium mr-2">Total Records:</span>
-            <span className="font-bold text-blue-600">{expenses.length}</span>
+          <h1 className="text-2xl font-bold text-white">Global Expenses Database</h1>
+          <div className="bg-slate-900 px-4 py-2 rounded-lg border border-slate-800 shadow-sm">
+            <span className="text-sm text-slate-400 font-medium mr-2">Total Records:</span>
+            <span className="font-bold text-blue-500">{expenses.length}</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-slate-900 rounded-xl shadow-sm border border-slate-800 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-slate-500 uppercase font-semibold border-b border-slate-200">
+            <table className="w-full text-left text-sm text-slate-400">
+              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4">Date</th>
                   <th className="px-6 py-4">User ID</th>
@@ -91,24 +91,24 @@ export default function Dashboard() {
                   <th className="px-6 py-4 text-right">Amount (₱)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-800">
                 {expenses.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-slate-400">No expenses found in the database.</td>
+                    <td colSpan={6} className="px-6 py-8 text-center text-slate-500">No expenses found in the database.</td>
                   </tr>
                 ) : (
                   expenses.map((exp) => (
-                    <tr key={exp.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-800 whitespace-nowrap">{exp.date}</td>
+                    <tr key={exp.id} className="hover:bg-slate-800/50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-slate-200 whitespace-nowrap">{exp.date}</td>
                       <td className="px-6 py-4">
-                        <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-mono">{exp.userId}</span>
+                        <span className="bg-slate-800 text-slate-400 px-2 py-1 rounded text-xs font-mono">{exp.userId}</span>
                       </td>
-                      <td className="px-6 py-4 font-medium text-slate-800">{exp.name || '-'}</td>
+                      <td className="px-6 py-4 font-medium text-slate-200">{exp.name || '-'}</td>
                       <td className="px-6 py-4 capitalize">
-                        <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold">{exp.category}</span>
+                        <span className="bg-blue-900/30 text-blue-400 px-2.5 py-1 rounded-full text-xs font-semibold">{exp.category}</span>
                       </td>
-                      <td className="px-6 py-4 text-slate-500">{exp.paymentMethod}</td>
-                      <td className="px-6 py-4 text-right font-bold text-red-600">
+                      <td className="px-6 py-4 text-slate-400">{exp.paymentMethod}</td>
+                      <td className="px-6 py-4 text-right font-bold text-red-400">
                         {Number(exp.amount).toFixed(2)}
                       </td>
                     </tr>

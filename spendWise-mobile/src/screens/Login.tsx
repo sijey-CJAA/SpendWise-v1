@@ -52,29 +52,25 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-emerald-50 justify-center">
+    <SafeAreaView className="flex-1 bg-slate-950 justify-center">
       <KeyboardAvoidingView 
         className="flex-1 px-8 justify-center items-center"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View className="w-full max-w-md md:bg-white md:p-8 md:rounded-3xl md:shadow-xl md:shadow-emerald-900/10 md:border md:border-emerald-100">
+        <View className="w-full max-w-md md:bg-slate-900 md:p-8 md:rounded-3xl md:shadow-2xl md:shadow-blue-900/20 md:border md:border-slate-800">
           <View className="items-center mb-10">
-            <View className="w-20 h-20 rounded-full bg-white justify-center items-center mb-6 shadow-lg shadow-emerald-500/20 elevation-lg md:border md:border-emerald-50">
-              <ExpoImage 
-                source={require('../../assets/SpendWiseLogo.svg')} 
-                className="w-12 h-12" 
-                contentFit="contain"
-              />
+            <View className="w-20 h-20 rounded-full bg-slate-800 justify-center items-center mb-6 shadow-lg shadow-blue-500/20 elevation-lg md:border md:border-slate-700">
+              <ExpoImage source={require('../../assets/SpendWiseLogo_login.svg')} className="w-12 h-12" style={{ width: 48, height: 48 }} contentFit="contain" />
             </View>
-            <Text className="text-3xl font-extrabold text-blue-900 mb-2">{isLoginMode ? 'Welcome Back!' : 'Create Account'}</Text>
-            <Text className="text-base text-slate-500 text-center">{isLoginMode ? 'Sign in to manage your finances.' : 'Join SpendWise to track expenses.'}</Text>
+            <Text className="text-3xl font-extrabold text-white mb-2">{isLoginMode ? 'SpendWise' : 'Create Account'}</Text>
+            <Text className="text-base text-slate-400 text-center">{isLoginMode ? 'Sign in to manage your finances.' : 'Join SpendWise to track expenses.'}</Text>
           </View>
 
           <View className="mb-8">
             <View className="mb-5">
-              <Text className="text-sm font-semibold text-blue-900 mb-2">Email Address</Text>
+              <Text className="text-sm font-semibold text-blue-400 mb-2">Email Address</Text>
               <TextInput
-                className="bg-white h-14 rounded-2xl px-4 text-base text-gray-800 border border-emerald-200 shadow-sm shadow-black/5 elevation-sm"
+                className="bg-slate-800 h-14 rounded-2xl px-4 text-base text-white border border-slate-700 shadow-sm shadow-black/5 elevation-sm"
                 placeholder="Enter your email"
                 placeholderTextColor="#9ca3af"
                 value={email}
@@ -85,9 +81,9 @@ export default function Login() {
             </View>
 
             <View className="mb-5">
-              <Text className="text-sm font-semibold text-blue-900 mb-2">Password</Text>
+              <Text className="text-sm font-semibold text-blue-400 mb-2">Password</Text>
               <TextInput
-                className="bg-white h-14 rounded-2xl px-4 text-base text-gray-800 border border-emerald-200 shadow-sm shadow-black/5 elevation-sm"
+                className="bg-slate-800 h-14 rounded-2xl px-4 text-base text-white border border-slate-700 shadow-sm shadow-black/5 elevation-sm"
                 placeholder="Enter your password"
                 placeholderTextColor="#9ca3af"
                 value={password}
@@ -97,12 +93,12 @@ export default function Login() {
             </View>
 
             <TouchableOpacity className="self-end mb-8">
-              <Text className="text-blue-500 font-semibold text-sm hover:text-blue-600 transition-colors">Forgot Password?</Text>
+              <Text className="text-blue-500 font-semibold text-sm hover:text-blue-400 transition-colors">Forgot Password?</Text>
             </TouchableOpacity>
 
             <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
               <TouchableOpacity 
-                className="bg-blue-500 h-14 rounded-2xl justify-center items-center shadow-lg shadow-blue-500/30 elevation-md hover:bg-blue-600 transition-colors"
+                className="bg-blue-600 h-14 rounded-2xl justify-center items-center shadow-lg shadow-blue-600/30 elevation-md hover:bg-blue-500 transition-colors"
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 onPress={handleAuth}
@@ -119,9 +115,9 @@ export default function Login() {
           </View>
           
           <View className="flex-row justify-center items-center">
-            <Text className="text-slate-500 text-base">{isLoginMode ? "Don't have an account? " : "Already have an account? "}</Text>
+            <Text className="text-slate-400 text-base">{isLoginMode ? "Don't have an account? " : "Already have an account? "}</Text>
             <TouchableOpacity onPress={() => setIsLoginMode(!isLoginMode)}>
-              <Text className="text-emerald-600 text-base font-bold hover:text-emerald-700 transition-colors">{isLoginMode ? 'Sign up' : 'Login'}</Text>
+              <Text className="text-blue-500 text-base font-bold hover:text-blue-400 transition-colors">{isLoginMode ? 'Sign up' : 'Login'}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -37,7 +37,7 @@ export default function Analytics() {
       <View className="flex-1 w-full relative">
 
         {/* Custom Header */}
-        <View className="flex-row justify-between items-center px-6 pt-2 pb-4 w-full">
+        <View className="flex-row justify-between items-center px-6 pt-2 pb-4 w-full mt-2">
           <TouchableOpacity
             className="w-10 h-10 rounded-full border border-[#333333] bg-brand-card-bg justify-center items-center"
             onPress={() => router.back()}

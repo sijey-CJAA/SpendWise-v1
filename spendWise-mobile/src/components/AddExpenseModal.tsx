@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, Modal, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, Modal, ActivityIndicator, Alert, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { addExpense } from '../services/expenseService';
 
 interface AddExpenseModalProps {
@@ -12,7 +13,8 @@ export default function AddExpenseModal({ visible, onClose }: AddExpenseModalPro
   const [amount, setAmount] = useState('');
   const [expenseName, setExpenseName] = useState('');
   const [category, setCategory] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(() => new Date().toISOString());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -24,22 +26,34 @@ export default function AddExpenseModal({ visible, onClose }: AddExpenseModalPro
       setAmount('');
       setExpenseName('');
       setCategory('');
-      setDate(new Date().toISOString().split('T')[0]);
+      setDate(new Date().toISOString());
       setPaymentMethod('');
       setNotes('');
       setIsRecurring(false);
+      setShowDatePicker(false);
     }
   }, [visible]);
 
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (selectedDate) setDate(selectedDate.toISOString());
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
   const categories = [
-    { id: 'food', icon: 'restaurant-outline', label: 'Food', colorClass: 'bg-secondary-container text-on-secondary-container' },
-    { id: 'transport', icon: 'car-outline', label: 'Transport', colorClass: 'bg-surface-container text-on-surface' },
-    { id: 'shopping', icon: 'bag-outline', label: 'Shopping', colorClass: 'bg-surface-container text-on-surface' },
-    { id: 'bills', icon: 'receipt-outline', label: 'Bills', colorClass: 'bg-surface-container text-on-surface' },
-    { id: 'entertainment', icon: 'film-outline', label: 'Entertain', colorClass: 'bg-surface-container text-on-surface' },
-    { id: 'health', icon: 'medkit-outline', label: 'Health', colorClass: 'bg-surface-container text-on-surface' },
-    { id: 'education', icon: 'school-outline', label: 'Education', colorClass: 'bg-surface-container text-on-surface' },
-    { id: 'other', icon: 'ellipsis-horizontal-outline', label: 'Other', colorClass: 'bg-surface-container text-on-surface' },
+    { id: 'food', icon: 'restaurant-outline', label: 'Food' },
+    { id: 'transport', icon: 'car-outline', label: 'Transport' },
+    { id: 'shopping', icon: 'bag-outline', label: 'Shopping' },
+    { id: 'bills', icon: 'receipt-outline', label: 'Bills' },
+    { id: 'entertainment', icon: 'film-outline', label: 'Entertain' },
+    { id: 'health', icon: 'medkit-outline', label: 'Health' },
+    { id: 'education', icon: 'school-outline', label: 'Education' },
+    { id: 'other', icon: 'ellipsis-horizontal-outline', label: 'Other' },
   ];
 
   const handleSave = async () => {
@@ -66,7 +80,7 @@ export default function AddExpenseModal({ visible, onClose }: AddExpenseModalPro
         amount: parseFloat(amount),
         name: expenseName,
         category,
-        date,
+        date: date.split('T')[0],
         paymentMethod,
         notes,
         isRecurring
@@ -80,177 +94,180 @@ export default function AddExpenseModal({ visible, onClose }: AddExpenseModalPro
   };
 
   return (
-    <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView 
-        className="flex-1 justify-end bg-black/40"
+        className="flex-1 justify-center items-center bg-black/60"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View className="bg-background w-full rounded-t-3xl h-[85%]" style={{ shadowColor: '#000', shadowOffset: {width: 0, height: -2}, shadowOpacity: 0.2, shadowRadius: 10, elevation: 20 }}>
-          <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-            <View className="w-full max-w-md mx-auto px-margin-mobile pt-6">
-              {/* Header */}
-              <View className="flex-row justify-between items-center z-40 bg-background mb-4">
-                <View className="flex-row items-center gap-3">
-                  <TouchableOpacity onPress={onClose} className="p-2 rounded-full justify-center items-center bg-surface-variant">
-                    <Ionicons name="close" size={24} color="#1c0832" />
-                  </TouchableOpacity>
-                  <Text className="text-[22px] text-primary font-bold">Add Expense</Text>
-                </View>
-                <TouchableOpacity className="p-2 rounded-full flex items-center hover:bg-surface-variant">
-                  <Ionicons name="save-outline" size={24} color="#1c0832" />
-                </TouchableOpacity>
-              </View>
+        <View className="bg-brand-light w-[90%] max-h-[85%] rounded-[24px] border border-white/20 overflow-hidden" style={{ shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, shadowRadius: 10, elevation: 20 }}>
+          {/* Sticky Header */}
+          <View className="flex-row justify-between items-center z-40 bg-brand-light px-6 pt-6 pb-4 border-b border-white/5">
+            <Text className="text-[20px] text-brand-dark font-bold">Add Expense</Text>
+            <TouchableOpacity onPress={onClose} className="w-10 h-10 rounded-full justify-center items-center bg-brand-card-bg border border-[#333333]">
+              <Ionicons name="close" size={20} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
 
-            {/* Amount Input */}
-            <View className="flex flex-col items-center justify-center py-stack-lg bg-surface-container-lowest rounded-xl shadow-sm border border-surface-variant mt-stack-md">
-              <Text className="text-label-md text-on-surface-variant mb-2">Total Amount</Text>
-              <View className="flex-row items-center justify-center gap-2">
-                <Text className="text-headline-xl-mobile text-on-surface">₱</Text>
-                <TextInput
-                  className="text-headline-xl-mobile text-on-surface text-center p-0"
-                  placeholder="0.00"
-                  placeholderTextColor="#7b757e"
-                  keyboardType="decimal-pad"
-                  value={amount}
-                  onChangeText={setAmount}
-                  autoFocus
-                  style={{ minWidth: 80, outlineStyle: 'none' } as any}
-                />
-              </View>
-            </View>
+          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+            <View className="w-full max-w-md mx-auto px-6 pt-2">
 
-            {/* Form Details */}
-            <View className="flex flex-col gap-stack-md mt-stack-md">
-              {/* Expense Name */}
-              <View className="flex flex-col">
-                <Text className="text-label-sm text-on-surface-variant mb-1 ml-1">Expense Name</Text>
-                <TextInput
-                  className="w-full bg-surface-container-low border-none rounded-lg p-3 text-body-md text-on-surface"
-                  placeholder="e.g. Lunch with Maria"
-                  placeholderTextColor="#7b757e"
-                  value={expenseName}
-                  onChangeText={setExpenseName}
-                  style={{ outlineStyle: 'none' } as any}
-                />
-              </View>
-
-              {/* Categories */}
-              <View className="flex flex-col">
-                <Text className="text-label-sm text-on-surface-variant mb-2 ml-1">Category</Text>
-                <View className="flex-row flex-wrap justify-between">
-                  {categories.map((cat, index) => (
-                    <TouchableOpacity 
-                      key={index} 
-                      className={`w-[23%] flex-col items-center justify-center p-2 rounded-xl mb-2 ${category === cat.id ? 'bg-secondary-container' : 'bg-surface-container'} border border-transparent hover:border-outline-variant`}
-                      onPress={() => setCategory(cat.id)}
-                    >
-                      <Ionicons name={cat.icon as any} size={24} color={category === cat.id ? "#42627d" : "#1d1b1e"} className="mb-1" />
-                      <Text className={`text-[11px] mt-1 ${category === cat.id ? 'text-on-secondary-container font-bold' : 'text-on-surface'}`}>{cat.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Date */}
-              <View className="flex flex-col mt-4">
-                <Text className="text-label-sm text-on-surface-variant mb-1 ml-1">Date</Text>
-                <View className="relative bg-surface-container-low rounded-lg flex-row items-center">
-                  <View className="absolute left-3 z-10 pointer-events-none">
-                      <Ionicons name="calendar-outline" size={20} color="#7b757e" />
-                  </View>
+              {/* Amount Input */}
+              <View className="flex flex-col items-center justify-center py-6 bg-brand-card-bg rounded-xl shadow-sm border border-[#333333] mt-4">
+                <Text className="text-[14px] text-gray-400 mb-2">Total Amount</Text>
+                <View className="flex-row items-center justify-center gap-2">
+                  <Text className="text-[32px] text-brand-dark font-bold">₱</Text>
                   <TextInput
-                    className="flex-1 py-3 pl-10 pr-3 text-body-md text-on-surface"
-                    placeholder="YYYY-MM-DD"
-                    value={date}
-                    onChangeText={setDate}
-                    style={{ outlineStyle: 'none' } as any}
+                    className="text-[32px] text-brand-dark font-bold text-center p-0"
+                    placeholder="0.00"
+                    placeholderTextColor="#7b757e"
+                    keyboardType="decimal-pad"
+                    value={amount}
+                    onChangeText={setAmount}
+                    autoFocus
+                    style={{ minWidth: 80, outlineStyle: 'none' } as any}
                   />
                 </View>
               </View>
 
-              {/* Payment Method */}
-              <View className="flex flex-col">
-                <Text className="text-label-sm text-on-surface-variant mb-2 ml-1">Payment Method</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2 pb-2">
-                  {['Cash', 'GCash', 'Maya', 'Bank', 'Card'].map((method, i) => (
-                    <TouchableOpacity 
-                      key={i}
-                      className={`px-4 py-2 rounded-full mr-2 flex-row items-center gap-2 ${paymentMethod === method ? 'bg-primary-container' : 'bg-surface-container border border-outline-variant'}`}
-                      onPress={() => setPaymentMethod(method)}
-                    >
-                      {method === 'Cash' && <Ionicons name="cash-outline" size={16} color={paymentMethod === method ? "#ffffff" : "#1d1b1e"} />}
-                      {method === 'Bank' && <Ionicons name="business-outline" size={16} color={paymentMethod === method ? "#ffffff" : "#1d1b1e"} />}
-                      {method === 'Card' && <Ionicons name="card-outline" size={16} color={paymentMethod === method ? "#ffffff" : "#1d1b1e"} />}
-                      <Text className={paymentMethod === method ? "text-on-primary-container font-bold" : "text-on-surface font-semibold"}>{method}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+              {/* Form Details */}
+              <View className="flex flex-col gap-4 mt-6">
+                
+                {/* Expense Name */}
+                <View className="flex flex-col">
+                  <Text className="text-[14px] text-gray-400 mb-1 ml-1">Expense Name</Text>
+                  <TextInput
+                    className="w-full bg-brand-card-bg border border-[#333333] rounded-lg p-3 text-[16px] text-brand-dark"
+                    placeholder="e.g. Lunch with Maria"
+                    placeholderTextColor="#7b757e"
+                    value={expenseName}
+                    onChangeText={setExpenseName}
+                    style={{ outlineStyle: 'none' } as any}
+                  />
+                </View>
 
-              {/* Notes */}
-              <View className="flex flex-col">
-                <Text className="text-label-sm text-on-surface-variant mb-1 ml-1">Notes (Optional)</Text>
-                <TextInput
-                  className="w-full bg-surface-container-low border-none rounded-lg p-3 text-body-md text-on-surface"
-                  placeholder="Add some details..."
-                  placeholderTextColor="#7b757e"
-                  multiline
-                  numberOfLines={2}
-                  style={{ minHeight: 60, textAlignVertical: 'top', outlineStyle: 'none' } as any}
-                  value={notes}
-                  onChangeText={setNotes}
-                />
-              </View>
+                {/* Categories */}
+                <View className="flex flex-col">
+                  <Text className="text-[14px] text-gray-400 mb-2 ml-1">Category</Text>
+                  <View className="flex-row flex-wrap justify-between">
+                    {categories.map((cat, index) => (
+                      <TouchableOpacity 
+                        key={index} 
+                        className={`w-[23%] flex-col items-center justify-center p-2 rounded-xl mb-2 ${category === cat.id ? 'bg-[#2563eb]' : 'bg-brand-card-bg border border-[#333333]'}`}
+                        onPress={() => setCategory(cat.id)}
+                      >
+                        <Ionicons name={cat.icon as any} size={24} color={category === cat.id ? "#ffffff" : "#ffffff"} className="mb-1" />
+                        <Text className={`text-[11px] mt-1 text-center ${category === cat.id ? 'text-white font-bold' : 'text-brand-dark'}`} numberOfLines={1}>{cat.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
 
-              {/* Toggles & Extras */}
-              <View className="flex flex-col gap-3 mt-2 bg-surface-container-lowest p-4 rounded-xl border border-surface-variant">
-                <TouchableOpacity className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-3">
-                    <Ionicons name="camera-outline" size={24} color="#7b757e" />
-                    <Text className="text-body-md text-on-surface">Attach Receipt</Text>
+                {/* Date */}
+                <View className="flex flex-col mt-2">
+                  <Text className="text-[14px] text-gray-400 mb-1 ml-1">Date</Text>
+                  <TouchableOpacity onPress={() => setShowDatePicker(true)} className="relative bg-brand-card-bg border border-[#333333] rounded-lg flex-row items-center">
+                    <View className="absolute left-3 z-10 pointer-events-none">
+                        <Ionicons name="calendar-outline" size={20} color="#7b757e" />
+                    </View>
+                    <Text className="flex-1 py-3 pl-10 pr-3 text-[16px] text-brand-dark">
+                      {formatDate(date)}
+                    </Text>
+                  </TouchableOpacity>
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={new Date(date)}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={onDateChange}
+                      themeVariant="dark"
+                    />
+                  )}
+                </View>
+
+                {/* Payment Method */}
+                <View className="flex flex-col mt-2">
+                  <Text className="text-[14px] text-gray-400 mb-2 ml-1">Payment Method</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2 pb-2">
+                    {['Cash', 'GCash', 'Maya', 'Bank', 'Card'].map((method, i) => (
+                      <TouchableOpacity 
+                        key={i}
+                        className={`px-4 py-2 rounded-full mr-2 flex-row items-center gap-2 ${paymentMethod === method ? 'bg-[#2563eb]' : 'bg-brand-card-bg border border-[#333333]'}`}
+                        onPress={() => setPaymentMethod(method)}
+                      >
+                        {method === 'Cash' && <Ionicons name="cash-outline" size={16} color={paymentMethod === method ? "#ffffff" : "#ffffff"} />}
+                        {method === 'Bank' && <Ionicons name="business-outline" size={16} color={paymentMethod === method ? "#ffffff" : "#ffffff"} />}
+                        {method === 'Card' && <Ionicons name="card-outline" size={16} color={paymentMethod === method ? "#ffffff" : "#ffffff"} />}
+                        <Text className={paymentMethod === method ? "text-white font-bold" : "text-brand-dark font-semibold"}>{method}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* Notes */}
+                <View className="flex flex-col">
+                  <Text className="text-[14px] text-gray-400 mb-1 ml-1">Notes (Optional)</Text>
+                  <TextInput
+                    className="w-full bg-brand-card-bg border border-[#333333] rounded-lg p-3 text-[16px] text-brand-dark"
+                    placeholder="Add some details..."
+                    placeholderTextColor="#7b757e"
+                    multiline
+                    numberOfLines={2}
+                    style={{ minHeight: 60, textAlignVertical: 'top', outlineStyle: 'none' } as any}
+                    value={notes}
+                    onChangeText={setNotes}
+                  />
+                </View>
+
+                {/* Toggles & Extras */}
+                <View className="flex flex-col gap-0 mt-2 bg-brand-card-bg rounded-xl border border-[#333333] overflow-hidden">
+                  <TouchableOpacity className="flex-row items-center justify-between p-4 border-b border-[#333333]">
+                    <View className="flex-row items-center gap-3">
+                      <Ionicons name="camera-outline" size={24} color="#7b757e" />
+                      <Text className="text-[16px] text-brand-dark">Attach Receipt</Text>
+                    </View>
+                    <Text className="text-[#3b82f6] font-bold">Add</Text>
+                  </TouchableOpacity>
+                  
+                  <View className="flex-row items-center justify-between p-4 border-b border-[#333333]">
+                    <View className="flex-row items-center gap-3">
+                      <Ionicons name="sync-outline" size={24} color="#7b757e" />
+                      <Text className="text-[16px] text-brand-dark">Recurring Expense</Text>
+                    </View>
+                    <Switch
+                      trackColor={{ false: "#333333", true: "#3b82f6" }}
+                      thumbColor={isRecurring ? "#ffffff" : "#f4f3f4"}
+                      onValueChange={() => setIsRecurring(!isRecurring)}
+                      value={isRecurring}
+                    />
                   </View>
-                  <Text className="text-primary font-bold">Add</Text>
-                </TouchableOpacity>
-                <View className="h-[1px] bg-surface-variant my-1" />
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-3">
-                    <Ionicons name="sync-outline" size={24} color="#7b757e" />
-                    <Text className="text-body-md text-on-surface">Recurring Expense</Text>
-                  </View>
-                  <TouchableOpacity 
-                    className={`w-11 h-6 rounded-full flex-row items-center px-0.5 ${isRecurring ? 'bg-primary-container justify-end' : 'bg-surface-variant justify-start'}`}
-                    onPress={() => setIsRecurring(!isRecurring)}
-                  >
-                    <View className={`w-5 h-5 rounded-full bg-white`} />
+                  
+                  <TouchableOpacity className="flex-row items-center justify-between p-4">
+                    <View className="flex-row items-center gap-3">
+                      <Ionicons name="people-outline" size={24} color="#7b757e" />
+                      <View className="flex-col">
+                        <Text className="text-[16px] text-brand-dark">Split Expense</Text>
+                        <Text className="text-[12px] text-gray-400">with @maria</Text>
+                      </View>
+                    </View>
+                    <Text className="text-[#3b82f6] font-bold">Edit</Text>
                   </TouchableOpacity>
                 </View>
-                <View className="h-[1px] bg-surface-variant my-1" />
-                <TouchableOpacity className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-3">
-                    <Ionicons name="people-outline" size={24} color="#7b757e" />
-                    <View className="flex-col">
-                      <Text className="text-body-md text-on-surface">Split Expense</Text>
-                      <Text className="text-[12px] text-on-surface-variant">with @maria</Text>
-                    </View>
-                  </View>
-                  <Text className="text-primary font-bold">Edit</Text>
-                </TouchableOpacity>
-              </View>
 
-              {/* Save Button */}
-              <TouchableOpacity 
-                className={`w-full ${isSaving ? 'bg-surface-variant' : 'bg-primary-container'} py-4 rounded-xl mt-4 shadow-md justify-center items-center hover:opacity-90 active:scale-95 transition-all`}
-                onPress={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#1c0832" />
-                ) : (
-                  <Text className="text-on-primary-container font-bold text-[18px]">Save Expense</Text>
-                )}
-              </TouchableOpacity>
+                {/* Save Button */}
+                <TouchableOpacity 
+                  className={`w-full ${isSaving ? 'bg-[#1e3a8a]' : 'bg-[#2563eb]'} py-4 rounded-xl mt-6 shadow-md justify-center items-center hover:opacity-90 active:scale-95 transition-all`}
+                  onPress={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <Text className="text-white font-bold text-[18px]">Save Expense</Text>
+                  )}
+                </TouchableOpacity>
+
+              </View>
             </View>
-          </View>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>

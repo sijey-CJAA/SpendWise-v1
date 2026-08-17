@@ -96,7 +96,7 @@ export default function Dashboard() {
       <View className="flex-1 w-full relative">
 
         {/* Custom Top Header */}
-        <View className="flex-row justify-between items-center px-6 pt-2 pb-4 w-full">
+        <View className="flex-row justify-between items-center px-6 pt-2 pb-4 w-full mt-2">
           <View className="flex-row items-center">
             <Text className="text-[28px] font-black tracking-tight" style={{ color: '#3b82f6' }}>Spend</Text>
             <Text className="text-[28px] font-black tracking-tight text-brand-dark">Wise</Text>
@@ -144,7 +144,7 @@ export default function Dashboard() {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8" style={{ marginHorizontal: -24, paddingHorizontal: 24 }}>
             {/* Add Payment Plus Card */}
-            <TouchableOpacity 
+            <TouchableOpacity
               className="bg-brand-card-bg border border-dashed border-[#333333] rounded-[24px] p-5 mr-4 w-[160px] h-[160px] justify-center items-center"
               onPress={() => {
                 setEditingPayment(null);
@@ -175,7 +175,7 @@ export default function Dashboard() {
                 {/* Inline Dropdown */}
                 {activePaymentMenuId === payment.id && (
                   <View className="absolute top-12 right-2 bg-[#2a2a2a] rounded-xl border border-[#444] shadow-lg z-50 overflow-hidden w-28">
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       className="px-4 py-3 border-b border-[#444]"
                       onPress={() => {
                         setActivePaymentMenuId(null);
@@ -185,7 +185,7 @@ export default function Dashboard() {
                     >
                       <Text className="text-white text-[14px]">Edit</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       className="px-4 py-3"
                       onPress={() => {
                         setActivePaymentMenuId(null);
@@ -236,14 +236,14 @@ export default function Dashboard() {
         <BottomNavBar currentRoute="home" />
 
       </View>
-      
-      <AddUpcomingPaymentModal 
-        visible={isUpcomingModalVisible} 
+
+      <AddUpcomingPaymentModal
+        visible={isUpcomingModalVisible}
         onClose={() => {
           setIsUpcomingModalVisible(false);
           setEditingPayment(null);
-        }} 
-        onSave={handleSaveUpcomingPayment} 
+        }}
+        onSave={handleSaveUpcomingPayment}
         initialData={editingPayment}
       />
 
@@ -259,13 +259,13 @@ export default function Dashboard() {
               Are you sure you want to delete {paymentToDelete?.name}? This action cannot be undone.
             </Text>
             <View className="flex-row gap-3 w-full">
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="flex-1 py-3 rounded-xl border border-[#444] justify-center items-center"
                 onPress={() => setPaymentToDelete(null)}
               >
                 <Text className="text-white font-bold">Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="flex-1 py-3 rounded-xl bg-red-500 justify-center items-center"
                 onPress={() => {
                   if (paymentToDelete) {
