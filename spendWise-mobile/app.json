@@ -11,6 +11,12 @@
     },
     "android": {},
     "web": {},
+    "icon": "./assets/applogo.svg",
+    "splash": {
+      "image": "./assets/applogo.svg",
+      "resizeMode": "contain",
+      "backgroundColor": "#020617"
+    },
     "plugins": [
       "expo-router",
       "@react-native-community/datetimepicker"

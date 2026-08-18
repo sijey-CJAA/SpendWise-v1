@@ -37,8 +37,8 @@ export const subscribeToExpenses = (userId: string, callback: (expenses: any[]) 
     .onSnapshot(
       (snapshot) => {
         let expenses = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          id: doc.id
         }));
         
         // Sort client-side to avoid needing a Firestore composite index
@@ -92,8 +92,8 @@ export const subscribeToUpcomingPayments = (userId: string, callback: (payments:
     .onSnapshot(
       (snapshot) => {
         let payments = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          id: doc.id
         }));
         
         // Sort by dueDate closest to today
@@ -125,6 +125,79 @@ export const deleteUpcomingPayment = async (paymentId: string) => {
     await db.collection('upcomingPayments').doc(paymentId).delete();
   } catch (error) {
     console.error("Error deleting upcoming payment: ", error);
+    throw error;
+  }
+};
+
+export interface SharedExpenseData {
+  amount: number;
+  description: string;
+  personEmail: string;
+  type: 'iOwe' | 'theyOweMe';
+  dueDate: string;
+  status: 'pending' | 'paid';
+}
+
+export const addSharedExpense = async (expenseData: SharedExpenseData) => {
+  const user = auth.currentUser;
+  
+  if (!user) {
+    throw new Error('User must be logged in to add a shared expense.');
+  }
+
+  try {
+    const docRef = await db.collection('sharedExpenses').add({
+      ...expenseData,
+      userId: user.uid,
+      createdAt: new Date().toISOString(),
+    });
+    
+    return docRef.id;
+  } catch (error) {
+    console.error("Error adding shared expense: ", error);
+    throw error;
+  }
+};
+
+export const subscribeToSharedExpenses = (userId: string, callback: (expenses: any[]) => void) => {
+  return db.collection('sharedExpenses')
+    .where('userId', '==', userId)
+    .onSnapshot(
+      (snapshot) => {
+        let expenses = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id
+        }));
+        
+        // Sort by dueDate closest to today, or createdAt if needed
+        expenses.sort((a: any, b: any) => {
+          const dateA = new Date(a.dueDate).getTime();
+          const dateB = new Date(b.dueDate).getTime();
+          return dateA - dateB; // Ascending by due date
+        });
+
+        callback(expenses);
+      },
+      (error) => {
+        console.error("Error subscribing to shared expenses: ", error);
+      }
+    );
+};
+
+export const updateSharedExpense = async (expenseId: string, expenseData: Partial<SharedExpenseData>) => {
+  try {
+    await db.collection('sharedExpenses').doc(expenseId).update(expenseData);
+  } catch (error) {
+    console.error("Error updating shared expense: ", error);
+    throw error;
+  }
+};
+
+export const deleteSharedExpense = async (expenseId: string) => {
+  try {
+    await db.collection('sharedExpenses').doc(expenseId).delete();
+  } catch (error) {
+    console.error("Error deleting shared expense: ", error);
     throw error;
   }
 };

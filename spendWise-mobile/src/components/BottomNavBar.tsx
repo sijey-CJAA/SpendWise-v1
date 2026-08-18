@@ -78,11 +78,12 @@ export default function BottomNavBar({ currentRoute }: BottomNavBarProps) {
         <View className="flex-1 flex-row justify-around pl-8">
           <TouchableOpacity 
             className="items-center justify-center p-2"
+            onPress={() => router.push('/share')}
           >
             <Ionicons 
-              name={currentRoute === 'stats' ? 'stats-chart' : 'stats-chart-outline'} 
+              name={currentRoute === 'share' ? 'people' : 'people-outline'} 
               size={24} 
-              color={currentRoute === 'stats' ? '#ffffff' : '#9ca3af'} 
+              color={currentRoute === 'share' ? '#ffffff' : '#9ca3af'} 
             />
           </TouchableOpacity>
 
