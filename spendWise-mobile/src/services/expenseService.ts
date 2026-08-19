@@ -129,13 +129,24 @@ export const deleteUpcomingPayment = async (paymentId: string) => {
   }
 };
 
+export interface SharedExpenseItem {
+  name: string;
+  price: number;
+}
+
 export interface SharedExpenseData {
+  id?: string;
   amount: number;
   description: string;
   personEmail: string;
   type: 'iOwe' | 'theyOweMe';
   dueDate: string;
-  status: 'pending' | 'paid';
+  status: 'pending' | 'awaiting_approval' | 'paid';
+  items?: SharedExpenseItem[];
+  receiptUrl?: string;
+  creatorEmail?: string;
+  involvedEmails?: string[];
+  seenBy?: string[];
 }
 
 export const addSharedExpense = async (expenseData: SharedExpenseData) => {
@@ -149,6 +160,9 @@ export const addSharedExpense = async (expenseData: SharedExpenseData) => {
     const docRef = await db.collection('sharedExpenses').add({
       ...expenseData,
       userId: user.uid,
+      creatorEmail: user.email,
+      involvedEmails: [user.email, expenseData.personEmail.toLowerCase()],
+      seenBy: [user.email],
       createdAt: new Date().toISOString(),
     });
     
@@ -159,15 +173,31 @@ export const addSharedExpense = async (expenseData: SharedExpenseData) => {
   }
 };
 
-export const subscribeToSharedExpenses = (userId: string, callback: (expenses: any[]) => void) => {
+export const subscribeToSharedExpenses = (userEmail: string, callback: (expenses: any[]) => void) => {
   return db.collection('sharedExpenses')
-    .where('userId', '==', userId)
+    .where('involvedEmails', 'array-contains', userEmail.toLowerCase())
     .onSnapshot(
       (snapshot) => {
-        let expenses = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        }));
+        let expenses = snapshot.docs.map(doc => {
+          const data = doc.data();
+          const isCreator = data.creatorEmail === userEmail;
+          
+          let type = data.type;
+          let personEmail = data.personEmail;
+          
+          // If the logged in user is NOT the creator, reverse the perspective
+          if (!isCreator) {
+            type = data.type === 'iOwe' ? 'theyOweMe' : 'iOwe';
+            personEmail = data.creatorEmail;
+          }
+
+          return {
+            ...data,
+            id: doc.id,
+            type,
+            personEmail
+          };
+        });
         
         // Sort by dueDate closest to today, or createdAt if needed
         expenses.sort((a: any, b: any) => {

@@ -1,6 +1,7 @@
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
+import 'firebase/compat/storage';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -19,10 +20,11 @@ if (!firebase.apps.length) {
 const app = firebase.app();
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 // Wrapper functions to maintain compatibility with our Login/Dashboard screens
-export const signInWithEmailAndPassword = (authObj, email, password) => authObj.signInWithEmailAndPassword(email, password);
-export const createUserWithEmailAndPassword = (authObj, email, password) => authObj.createUserWithEmailAndPassword(email, password);
-export const signOut = (authObj) => authObj.signOut();
+export const signInWithEmailAndPassword = (authObj: any, email: any, password: any) => authObj.signInWithEmailAndPassword(email, password);
+export const createUserWithEmailAndPassword = (authObj: any, email: any, password: any) => authObj.createUserWithEmailAndPassword(email, password);
+export const signOut = (authObj: any) => authObj.signOut();
 
-export { app, auth, db };
+export { app, auth, db, storage };
