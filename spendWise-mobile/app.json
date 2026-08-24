@@ -10,7 +10,8 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.spendwise.app"
+      "package": "com.spendwise.app",
+      "versionCode": 1
     },
     "web": {},
     "icon": "./assets/applogo.svg",

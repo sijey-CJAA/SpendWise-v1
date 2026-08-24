@@ -2,8 +2,8 @@ name: Build Android APK
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*' # Triggers when you push a tag like v1.0.0
   workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
 
 jobs:
@@ -42,18 +42,22 @@ jobs:
         working-directory: ./spendWise-mobile/android
         run: ./gradlew assembleRelease
 
+      - name: Rename APK
+        working-directory: ./spendWise-mobile/android/app/build/outputs/apk/release/
+        run: mv app-release.apk SpendWise.apk
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: spendWise-mobile/android/app/build/outputs/apk/release/app-release.apk
+          name: SpendWise-apk
+          path: spendWise-mobile/android/app/build/outputs/apk/release/SpendWise.apk
 
       - name: Create GitHub Release
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v1
         with:
-          files: spendWise-mobile/android/app/build/outputs/apk/release/app-release.apk
-          tag_name: "v${{ github.run_number }}"
-          name: "Release #${{ github.run_number }}"
+          files: spendWise-mobile/android/app/build/outputs/apk/release/SpendWise.apk
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
