@@ -1,0 +1,59 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: spendWise-mobile/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install npm dependencies
+        working-directory: ./spendWise-mobile
+        run: npm install
+
+      - name: Prebuild Android project (Expo)
+        working-directory: ./spendWise-mobile
+        run: npx expo prebuild --platform android --clean
+
+      - name: Build APK (Release)
+        working-directory: ./spendWise-mobile/android
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: spendWise-mobile/android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: spendWise-mobile/android/app/build/outputs/apk/release/app-release.apk
+          tag_name: "v${{ github.run_number }}"
+          name: "Release #${{ github.run_number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
