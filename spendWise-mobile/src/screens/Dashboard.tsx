@@ -5,6 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import BottomNavBar from '../components/BottomNavBar';
 import AddUpcomingPaymentModal from '../components/AddUpcomingPaymentModal';
+import AddExpenseModal from '../components/AddExpenseModal';
+import SeeAllUpcomingModal from '../components/SeeAllUpcomingModal';
+import SeeAllTransactionsModal from '../components/SeeAllTransactionsModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { auth } from '../config/firebase';
 import { subscribeToExpenses, subscribeToUpcomingPayments, addUpcomingPayment, updateUpcomingPayment, deleteUpcomingPayment } from '../services/expenseService';
@@ -20,6 +23,10 @@ export default function Dashboard() {
   const [editingPayment, setEditingPayment] = useState<any>(null);
   const [activePaymentMenuId, setActivePaymentMenuId] = useState<string | null>(null);
   const [paymentToDelete, setPaymentToDelete] = useState<any>(null);
+  const [isSeeAllUpcomingVisible, setIsSeeAllUpcomingVisible] = useState(false);
+  const [isSeeAllTransactionsVisible, setIsSeeAllTransactionsVisible] = useState(false);
+  const [isExpenseModalVisible, setIsExpenseModalVisible] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<any>(null);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -137,7 +144,7 @@ export default function Dashboard() {
           {/* Upcoming payment */}
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-[18px] font-bold text-brand-dark">Upcoming payment</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => setIsSeeAllUpcomingVisible(true)}>
               <Text className="text-[14px] text-gray-400 font-medium">See all</Text>
             </TouchableOpacity>
           </View>
@@ -203,7 +210,7 @@ export default function Dashboard() {
           {/* Recent Transections */}
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-[18px] font-bold text-brand-dark">Recent Transections</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => setIsSeeAllTransactionsVisible(true)}>
               <Text className="text-[14px] text-gray-400 font-medium">See all</Text>
             </TouchableOpacity>
           </View>
@@ -280,6 +287,37 @@ export default function Dashboard() {
           </View>
         </View>
       </Modal>
+
+      <SeeAllUpcomingModal 
+        visible={isSeeAllUpcomingVisible}
+        onClose={() => setIsSeeAllUpcomingVisible(false)}
+        payments={upcomingPayments}
+        onEdit={(payment) => {
+          setIsSeeAllUpcomingVisible(false);
+          setEditingPayment(payment);
+          setIsUpcomingModalVisible(true);
+        }}
+      />
+
+      <SeeAllTransactionsModal
+        visible={isSeeAllTransactionsVisible}
+        onClose={() => setIsSeeAllTransactionsVisible(false)}
+        transactions={expenses}
+        onEdit={(expense) => {
+          setIsSeeAllTransactionsVisible(false);
+          setEditingExpense(expense);
+          setIsExpenseModalVisible(true);
+        }}
+      />
+
+      <AddExpenseModal
+        visible={isExpenseModalVisible}
+        onClose={() => {
+          setIsExpenseModalVisible(false);
+          setEditingExpense(null);
+        }}
+        initialData={editingExpense}
+      />
 
     </SafeAreaView>
   );

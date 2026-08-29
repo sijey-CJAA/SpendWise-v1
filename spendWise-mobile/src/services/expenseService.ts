@@ -31,6 +31,24 @@ export const addExpense = async (expenseData: ExpenseData) => {
   }
 };
 
+export const updateExpense = async (expenseId: string, expenseData: Partial<ExpenseData>) => {
+  try {
+    await db.collection('expenses').doc(expenseId).update(expenseData);
+  } catch (error) {
+    console.error("Error updating expense: ", error);
+    throw error;
+  }
+};
+
+export const deleteExpense = async (expenseId: string) => {
+  try {
+    await db.collection('expenses').doc(expenseId).delete();
+  } catch (error) {
+    console.error("Error deleting expense: ", error);
+    throw error;
+  }
+};
+
 export const subscribeToExpenses = (userId: string, callback: (expenses: any[]) => void) => {
   return db.collection('expenses')
     .where('userId', '==', userId)

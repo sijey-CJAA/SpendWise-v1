@@ -7,9 +7,10 @@ import { addExpense } from '../services/expenseService';
 interface AddExpenseModalProps {
   visible: boolean;
   onClose: () => void;
+  initialData?: any;
 }
 
-export default function AddExpenseModal({ visible, onClose }: AddExpenseModalProps) {
+export default function AddExpenseModal({ visible, onClose, initialData }: AddExpenseModalProps) {
   const [amount, setAmount] = useState('');
   const [expenseName, setExpenseName] = useState('');
   const [category, setCategory] = useState('');
@@ -20,19 +21,29 @@ export default function AddExpenseModal({ visible, onClose }: AddExpenseModalPro
   const [isRecurring, setIsRecurring] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Reset fields when opened
+  // Reset fields when opened or initialData changes
   useEffect(() => {
     if (visible) {
-      setAmount('');
-      setExpenseName('');
-      setCategory('');
-      setDate(new Date().toISOString());
-      setPaymentMethod('');
-      setNotes('');
-      setIsRecurring(false);
+      if (initialData) {
+        setAmount(initialData.amount ? String(initialData.amount) : '');
+        setExpenseName(initialData.name || '');
+        setCategory(initialData.category || '');
+        setDate(initialData.date ? new Date(initialData.date).toISOString() : new Date().toISOString());
+        setPaymentMethod(initialData.paymentMethod || '');
+        setNotes(initialData.notes || '');
+        setIsRecurring(initialData.isRecurring || false);
+      } else {
+        setAmount('');
+        setExpenseName('');
+        setCategory('');
+        setDate(new Date().toISOString());
+        setPaymentMethod('');
+        setNotes('');
+        setIsRecurring(false);
+      }
       setShowDatePicker(false);
     }
-  }, [visible]);
+  }, [visible, initialData]);
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') setShowDatePicker(false);
@@ -76,7 +87,7 @@ export default function AddExpenseModal({ visible, onClose }: AddExpenseModalPro
 
     setIsSaving(true);
     try {
-      await addExpense({
+      const expenseData = {
         amount: parseFloat(amount),
         name: expenseName,
         category,
@@ -84,7 +95,16 @@ export default function AddExpenseModal({ visible, onClose }: AddExpenseModalPro
         paymentMethod,
         notes,
         isRecurring
-      });
+      };
+
+      if (initialData && initialData.id) {
+        // Use update method (need to import updateExpense if available in expenseService)
+        const { updateExpense } = require('../services/expenseService');
+        await updateExpense(initialData.id, expenseData);
+      } else {
+        await addExpense(expenseData);
+      }
+      
       onClose(); // Auto close the modal on success
     } catch (error) {
       Alert.alert('Error', 'Failed to save expense. Please try again.');
@@ -102,7 +122,7 @@ export default function AddExpenseModal({ visible, onClose }: AddExpenseModalPro
         <View className="bg-brand-light w-[90%] max-h-[85%] rounded-[24px] border border-white/20 overflow-hidden" style={{ shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, shadowRadius: 10, elevation: 20 }}>
           {/* Sticky Header */}
           <View className="flex-row justify-between items-center z-40 bg-brand-light px-6 pt-6 pb-4 border-b border-white/5">
-            <Text className="text-[20px] text-brand-dark font-bold">Add Expense</Text>
+            <Text className="text-[20px] text-brand-dark font-bold">{initialData ? 'Edit Expense' : 'Add Expense'}</Text>
             <TouchableOpacity onPress={onClose} className="w-10 h-10 rounded-full justify-center items-center bg-brand-card-bg border border-[#333333]">
               <Ionicons name="close" size={20} color="#ffffff" />
             </TouchableOpacity>
