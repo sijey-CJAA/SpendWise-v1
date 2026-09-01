@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -8,16 +8,17 @@ import AddUpcomingPaymentModal from '../components/AddUpcomingPaymentModal';
 import AddExpenseModal from '../components/AddExpenseModal';
 import SeeAllUpcomingModal from '../components/SeeAllUpcomingModal';
 import SeeAllTransactionsModal from '../components/SeeAllTransactionsModal';
+import OverduePaymentModal from '../components/OverduePaymentModal';
+import MonthlySpendingsModal from '../components/MonthlySpendingsModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { auth } from '../config/firebase';
-import { subscribeToExpenses, subscribeToUpcomingPayments, addUpcomingPayment, updateUpcomingPayment, deleteUpcomingPayment } from '../services/expenseService';
+import { subscribeToExpenses, subscribeToUpcomingPayments, addUpcomingPayment, updateUpcomingPayment, deleteUpcomingPayment, addExpense } from '../services/expenseService';
+import { syncService } from '../services/syncService';
 
 export default function Dashboard() {
   const router = useRouter();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
-  const [balance, setBalance] = useState(10000); // Mock initial balance
   const [upcomingPayments, setUpcomingPayments] = useState<any[]>([]);
   const [isUpcomingModalVisible, setIsUpcomingModalVisible] = useState(false);
   const [editingPayment, setEditingPayment] = useState<any>(null);
@@ -27,6 +28,16 @@ export default function Dashboard() {
   const [isSeeAllTransactionsVisible, setIsSeeAllTransactionsVisible] = useState(false);
   const [isExpenseModalVisible, setIsExpenseModalVisible] = useState(false);
   const [editingExpense, setEditingExpense] = useState<any>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentOverduePayment, setCurrentOverduePayment] = useState<any>(null);
+  const [isMonthlySpendingsModalVisible, setIsMonthlySpendingsModalVisible] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await syncService.processQueue();
+    // In case processQueue is too fast, add a small delay for UX
+    setTimeout(() => setRefreshing(false), 800);
+  }, []);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -51,13 +62,42 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    let totalSpent = 0;
-    expenses.forEach(exp => {
-      totalSpent += (Number(exp.amount) || 0);
+    const now = new Date();
+    
+    const overdue = upcomingPayments.find(payment => {
+      const dueDate = new Date(payment.dueDate);
+      if (dueDate >= now) return false;
+      
+      if (payment.lastPromptedAt) {
+        const lastPrompted = new Date(payment.lastPromptedAt);
+        const hoursSincePrompt = (now.getTime() - lastPrompted.getTime()) / (1000 * 60 * 60);
+        if (hoursSincePrompt < 24) return false;
+      }
+      
+      return true;
     });
-    setBalance(totalSpent);
-    setRecentTransactions(expenses.slice(0, 5));
-  }, [expenses]);
+
+    if (overdue && !currentOverduePayment) {
+      setCurrentOverduePayment(overdue);
+    }
+  }, [upcomingPayments, currentOverduePayment]);
+
+  const currentMonthName = new Date().toLocaleDateString('en-US', { month: 'long' });
+  const currentMonthYear = new Date().getFullYear();
+  const currentMonthIndex = new Date().getMonth();
+
+  const currentMonthBalance = expenses.reduce((sum, exp) => {
+    if (!exp.date) return sum;
+    const parts = exp.date.split('T')[0].split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    if (year === currentMonthYear && month === currentMonthIndex) {
+      return sum + (Number(exp.amount) || 0);
+    }
+    return sum;
+  }, 0);
+
+  const recentTransactions = expenses.slice(0, 5);
 
   const userName = auth.currentUser?.email?.split('@')[0] || 'User';
 
@@ -94,6 +134,44 @@ export default function Dashboard() {
     }
   };
 
+  const handleOverduePaid = async (payment: any) => {
+    try {
+      const getLocalDateString = (d: Date) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      await addExpense({
+        amount: Number(payment.amount),
+        name: payment.name,
+        category: payment.category,
+        date: getLocalDateString(new Date()),
+        paymentMethod: 'Cash',
+        notes: payment.notes || 'Paid from Upcoming Payments',
+        isRecurring: false
+      });
+      
+      await deleteUpcomingPayment(payment.id);
+      setCurrentOverduePayment(null);
+    } catch (error) {
+      console.error("Failed to mark overdue payment as paid", error);
+    }
+  };
+
+  const handleOverdueSnooze = async (payment: any) => {
+    try {
+      await updateUpcomingPayment(payment.id, {
+        lastPromptedAt: new Date().toISOString()
+      });
+      setCurrentOverduePayment(null);
+    } catch (error) {
+      console.error("Failed to snooze overdue payment", error);
+      setCurrentOverduePayment(null);
+    }
+  };
+
   const handleOptionsPress = (payment: any) => {
     setActivePaymentMenuId(prev => prev === payment.id ? null : payment.id);
   };
@@ -124,19 +202,35 @@ export default function Dashboard() {
           className="flex-1"
           contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#3b82f6"
+              colors={['#3b82f6']}
+            />
+          }
         >
           {/* Current Balance Card */}
           <LinearGradient
             colors={['#1e3a8a', '#3b82f6']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="p-6 mb-6 shadow-sm"
+            className="p-6 mb-6 shadow-sm relative"
             style={{ borderRadius: 15 }}
           >
-            <View className="flex-row justify-between items-center">
+            <TouchableOpacity 
+              className="absolute top-4 right-4 bg-white/20 px-3 py-1.5 rounded-full flex-row items-center gap-1 z-10"
+              onPress={() => setIsMonthlySpendingsModalVisible(true)}
+            >
+              <Text className="text-white text-[12px] font-bold">View Spendings</Text>
+              <Ionicons name="chevron-forward" size={14} color="#ffffff" />
+            </TouchableOpacity>
+
+            <View className="flex-row justify-between items-center mt-2">
               <View>
-                <Text className="text-white/70 text-[14px] font-medium mb-1">Total Spendings</Text>
-                <Text className="text-white text-[32px] font-bold">₱{balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                <Text className="text-white/70 text-[14px] font-medium mb-1">Total Spendings for {currentMonthName}</Text>
+                <Text className="text-white text-[32px] font-bold">₱{currentMonthBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
               </View>
             </View>
           </LinearGradient>
@@ -317,6 +411,19 @@ export default function Dashboard() {
           setEditingExpense(null);
         }}
         initialData={editingExpense}
+      />
+
+      <OverduePaymentModal
+        visible={!!currentOverduePayment}
+        payment={currentOverduePayment}
+        onPaid={handleOverduePaid}
+        onSnooze={handleOverdueSnooze}
+      />
+
+      <MonthlySpendingsModal
+        visible={isMonthlySpendingsModalVisible}
+        onClose={() => setIsMonthlySpendingsModalVisible(false)}
+        expenses={expenses}
       />
 
     </SafeAreaView>

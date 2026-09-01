@@ -2,6 +2,9 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
+import { initializeAuth } from 'firebase/auth';
+import { getReactNativePersistence } from 'firebase/auth/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -18,6 +21,13 @@ if (!firebase.apps.length) {
 }
 
 const app = firebase.app();
+
+// Initialize the modular auth with AsyncStorage to enable persistence
+initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
+
+// Get the compat auth which will now use the properly configured persistence
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();

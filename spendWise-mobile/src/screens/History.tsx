@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import BottomNavBar from '../components/BottomNavBar';
 import TopNavBar from '../components/TopNavBar';
+import { syncService } from '../services/syncService';
 
 export default function History() {
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await syncService.processQueue();
+    setTimeout(() => setRefreshing(false), 800);
+  }, []);
   
   // Mock data for history
   const transactions = [
@@ -23,7 +31,19 @@ export default function History() {
       {/* Top Navbar */}
       <TopNavBar />
 
-      <ScrollView className="flex-1 px-margin-mobile pt-stack-md max-w-2xl mx-auto w-full" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1 px-margin-mobile pt-stack-md max-w-2xl mx-auto w-full" 
+        contentContainerStyle={{ paddingBottom: 100 }} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#3b82f6"
+            colors={['#3b82f6']}
+          />
+        }
+      >
         <View className="flex-row justify-between items-center mb-stack-md">
             <Text className="text-[24px] font-bold text-primary">Expense History</Text>
             <TouchableOpacity className="p-2 rounded-full bg-surface-container">

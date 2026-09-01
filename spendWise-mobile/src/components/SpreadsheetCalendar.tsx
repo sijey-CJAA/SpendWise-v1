@@ -42,10 +42,10 @@ export default function SpreadsheetCalendar({ weeks }: SpreadsheetCalendarProps)
               {/* Date Column */}
               <View className="flex-[0.25] p-3 justify-center items-center border-r border-[#333333] bg-[#1e1e1e]">
                 <Text className="text-white font-semibold text-[12px] text-center">
-                  {new Date(day.date).getDate()}
+                  {day.dateNum}
                 </Text>
                 <Text className="text-gray-400 text-[10px] text-center uppercase mt-0.5">
-                  {new Date(day.date).toLocaleString('default', { weekday: 'short' })}
+                  {day.weekday}
                 </Text>
               </View>
 

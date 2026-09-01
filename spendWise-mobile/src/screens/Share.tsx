@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import { auth } from '../config/firebase';
 import { subscribeToSharedExpenses, addSharedExpense, SharedExpenseData } from '../services/expenseService';
 import AddSharedExpenseModal from '../components/AddSharedExpenseModal';
 import ViewSharedExpenseModal from '../components/ViewSharedExpenseModal';
+import { syncService } from '../services/syncService';
 
 export default function Share() {
   const router = useRouter();
@@ -16,6 +17,13 @@ export default function Share() {
   const [sharedExpenses, setSharedExpenses] = useState<any[]>([]);
   const [isViewModalVisible, setIsViewModalVisible] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<SharedExpenseData | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await syncService.processQueue();
+    setTimeout(() => setRefreshing(false), 800);
+  }, []);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -34,8 +42,8 @@ export default function Share() {
   const iOweExpenses = sharedExpenses.filter(e => e.type === 'iOwe');
   const theyOweMeExpenses = sharedExpenses.filter(e => e.type === 'theyOweMe');
 
-  const totalIOwe = iOweExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const totalTheyOweMe = theyOweMeExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalIOwe = iOweExpenses.reduce((sum, e) => e.status !== 'paid' ? sum + e.amount : sum, 0);
+  const totalTheyOweMe = theyOweMeExpenses.reduce((sum, e) => e.status !== 'paid' ? sum + e.amount : sum, 0);
 
   const activeExpenses = activeTab === 'iOwe' ? iOweExpenses : theyOweMeExpenses;
 
@@ -68,7 +76,19 @@ export default function Share() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-margin-mobile py-stack-lg max-w-2xl mx-auto w-full" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1 px-margin-mobile py-stack-lg max-w-2xl mx-auto w-full" 
+        contentContainerStyle={{ paddingBottom: 100 }} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#3b82f6"
+            colors={['#3b82f6']}
+          />
+        }
+      >
         
         {/* Add Shared Expense Big Card */}
         <TouchableOpacity 
@@ -100,7 +120,7 @@ export default function Share() {
             </View>
             <View>
               <Text className={`text-[28px] font-bold ${activeTab === 'iOwe' ? 'text-brand-dark' : 'text-brand-dark'}`}>₱{totalIOwe.toLocaleString()}</Text>
-              <Text className={`text-[12px] font-medium mt-1 ${activeTab === 'iOwe' ? 'text-gray-400' : 'text-gray-500'}`}>{iOweExpenses.length} Pending</Text>
+              <Text className={`text-[12px] font-medium mt-1 ${activeTab === 'iOwe' ? 'text-gray-400' : 'text-gray-500'}`}>{iOweExpenses.filter(e => e.status !== 'paid').length} Pending</Text>
             </View>
           </TouchableOpacity>
 
@@ -118,7 +138,7 @@ export default function Share() {
             </View>
             <View>
               <Text className={`text-[28px] font-bold ${activeTab === 'theyOweMe' ? 'text-brand-dark' : 'text-brand-dark'}`}>₱{totalTheyOweMe.toLocaleString()}</Text>
-              <Text className={`text-[12px] font-medium mt-1 ${activeTab === 'theyOweMe' ? 'text-gray-400' : 'text-gray-500'}`}>{theyOweMeExpenses.length} Pending</Text>
+              <Text className={`text-[12px] font-medium mt-1 ${activeTab === 'theyOweMe' ? 'text-gray-400' : 'text-gray-500'}`}>{theyOweMeExpenses.filter(e => e.status !== 'paid').length} Pending</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -178,7 +198,7 @@ export default function Share() {
                     </View>
                   </View>
                   <View className="items-end">
-                    <Text className="text-[18px] font-bold text-brand-dark">₱{expense.amount.toLocaleString()}</Text>
+                    <Text className={`text-[18px] font-bold ${expense.status === 'paid' ? 'text-gray-500 line-through' : 'text-brand-dark'}`}>₱{expense.amount.toLocaleString()}</Text>
                     <View className="flex-row items-center gap-1 mt-1">
                       {isSeenByOther && (
                         <Ionicons name="checkmark-done" size={14} color="#60a5fa" />

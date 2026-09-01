@@ -2,6 +2,7 @@ import '../global.css';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { auth } from '../src/config/firebase';
+import '../src/services/syncService'; // Initialize offline sync listener
 
 export default function Layout() {
   const [initializing, setInitializing] = useState(true);

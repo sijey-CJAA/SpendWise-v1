@@ -14,7 +14,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
   const [amount, setAmount] = useState('');
   const [expenseName, setExpenseName] = useState('');
   const [category, setCategory] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString());
+  const [date, setDate] = useState<Date>(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
@@ -28,7 +28,21 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
         setAmount(initialData.amount ? String(initialData.amount) : '');
         setExpenseName(initialData.name || '');
         setCategory(initialData.category || '');
-        setDate(initialData.date ? new Date(initialData.date).toISOString() : new Date().toISOString());
+        
+        let d = new Date();
+        if (initialData.date) {
+            const dateStr = initialData.date.split('T')[0];
+            if (dateStr.includes('-')) {
+                const parts = dateStr.split('-');
+                d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            } else {
+                d = new Date(initialData.date);
+            }
+        } else if (initialData.createdAt) {
+            d = new Date(initialData.createdAt);
+        }
+        setDate(d);
+        
         setPaymentMethod(initialData.paymentMethod || '');
         setNotes(initialData.notes || '');
         setIsRecurring(initialData.isRecurring || false);
@@ -36,7 +50,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
         setAmount('');
         setExpenseName('');
         setCategory('');
-        setDate(new Date().toISOString());
+        setDate(new Date());
         setPaymentMethod('');
         setNotes('');
         setIsRecurring(false);
@@ -47,12 +61,11 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') setShowDatePicker(false);
-    if (selectedDate) setDate(selectedDate.toISOString());
+    if (selectedDate) setDate(selectedDate);
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    const d = new Date(dateString);
+  const formatDate = (d: Date) => {
+    if (!d) return '';
     return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
@@ -66,6 +79,13 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
     { id: 'education', icon: 'school-outline', label: 'Education' },
     { id: 'other', icon: 'ellipsis-horizontal-outline', label: 'Other' },
   ];
+
+  const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount))) {
@@ -91,7 +111,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
         amount: parseFloat(amount),
         name: expenseName,
         category,
-        date: date.split('T')[0],
+        date: getLocalDateString(date),
         paymentMethod,
         notes,
         isRecurring
@@ -195,7 +215,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
                   </TouchableOpacity>
                   {showDatePicker && (
                     <DateTimePicker
-                      value={new Date(date)}
+                      value={date}
                       mode="date"
                       display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                       onChange={onDateChange}

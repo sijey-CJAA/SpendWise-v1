@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -9,17 +9,29 @@ import FrequentPurchases from '../components/FrequentPurchases';
 import { auth } from '../config/firebase';
 import { subscribeToExpenses } from '../services/expenseService';
 import { groupExpensesByMonth } from '../utils/dateGrouping';
+import { syncService } from '../services/syncService';
 
 export default function Analytics() {
   const router = useRouter();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await syncService.processQueue();
+    setTimeout(() => setRefreshing(false), 800);
+  }, []);
 
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
 
     const unsubscribe = subscribeToExpenses(user.uid, (data) => {
+      console.log('Analytics received expenses:', data.length);
+      if (data.length > 0) {
+        console.log('First expense:', JSON.stringify(data[0]));
+      }
       setExpenses(data);
     });
 
@@ -46,8 +58,17 @@ export default function Analytics() {
   // Filter expenses for the current month for Frequent Purchases
   const currentMonthExpenses = useMemo(() => {
     return expenses.filter(exp => {
-      const d = new Date(exp.date || exp.createdAt);
-      return d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+      let year, month;
+      if (exp.date && exp.date.includes('-')) {
+        const parts = exp.date.split('T')[0].split('-');
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+      } else {
+        const d = new Date(exp.createdAt || exp.date);
+        year = d.getFullYear();
+        month = d.getMonth();
+      }
+      return month === targetMonth && year === targetYear;
     });
   }, [expenses, targetMonth, targetYear]);
 
@@ -72,6 +93,14 @@ export default function Analytics() {
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#3b82f6"
+              colors={['#3b82f6']}
+            />
+          }
         >
           {/* Month Selector */}
           <View className="flex-row justify-between items-center px-6 py-4 mb-2 bg-[#1e1e1e] shadow-sm">

@@ -14,9 +14,9 @@
       "versionCode": 1
     },
     "web": {},
-    "icon": "./assets/applogo.svg",
+    "icon": "./assets/applogo.png",
     "splash": {
-      "image": "./assets/applogo.svg",
+      "image": "./assets/applogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#020617"
     },
