@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "spendWise-mobile",
+    "name": "SpendWise",
     "slug": "spendwise-mobile",
     "scheme": "spendwise-mobile",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
@@ -11,7 +11,7 @@
     },
     "android": {
       "package": "com.spendwise.app",
-      "versionCode": 1
+      "versionCode": 3
     },
     "web": {},
     "icon": "./assets/applogo.png",
