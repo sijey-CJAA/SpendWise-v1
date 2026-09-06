@@ -3,6 +3,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { auth } from '../src/config/firebase';
 import '../src/services/syncService'; // Initialize offline sync listener
+import UpdateModal from '../src/components/UpdateModal';
 
 export default function Layout() {
   const [initializing, setInitializing] = useState(true);
@@ -33,12 +34,15 @@ export default function Layout() {
   if (initializing) return null;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="dashboard" />
-      <Stack.Screen name="share" />
-      <Stack.Screen name="analytics" />
-      <Stack.Screen name="history" />
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="dashboard" />
+        <Stack.Screen name="share" />
+        <Stack.Screen name="analytics" />
+        <Stack.Screen name="history" />
+      </Stack>
+      <UpdateModal />
+    </>
   );
 }

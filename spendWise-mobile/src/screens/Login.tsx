@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Animated, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Animated, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '../config/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
@@ -31,7 +31,8 @@ export default function Login() {
   };
 
   const handleAuth = async () => {
-    if (!email || !password) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
       Alert.alert('Error', 'Please enter both email and password.');
       return;
     }
@@ -39,9 +40,9 @@ export default function Login() {
     setIsLoading(true);
     try {
       if (isLoginMode) {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, trimmedEmail, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       }
       router.replace('/dashboard');
     } catch (error: any) {
@@ -54,10 +55,15 @@ export default function Login() {
   return (
     <SafeAreaView className="flex-1 bg-slate-950 justify-center">
       <KeyboardAvoidingView 
-        className="flex-1 px-8 justify-center items-center"
+        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View className="w-full max-w-md md:bg-slate-900 md:p-8 md:rounded-3xl md:shadow-2xl md:shadow-blue-900/20 md:border md:border-slate-800">
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="w-full max-w-md self-center md:bg-slate-900 md:p-8 md:rounded-3xl md:shadow-2xl md:shadow-blue-900/20 md:border md:border-slate-800">
           <View className="items-center mb-10">
             <View className="w-20 h-20 rounded-full bg-slate-800 justify-center items-center mb-6 shadow-lg shadow-blue-500/20 elevation-lg md:border md:border-slate-700">
               <ExpoImage source={require('../../assets/SpendWiseLogo_login.svg')} className="w-12 h-12" style={{ width: 48, height: 48 }} contentFit="contain" />
@@ -120,7 +126,8 @@ export default function Login() {
               <Text className="text-blue-500 text-base font-bold hover:text-blue-400 transition-colors">{isLoginMode ? 'Sign up' : 'Login'}</Text>
             </TouchableOpacity>
           </View>
-        </View>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

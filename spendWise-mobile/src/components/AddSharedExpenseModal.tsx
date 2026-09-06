@@ -117,7 +117,7 @@ export default function AddSharedExpenseModal({ visible, onClose, onSave }: AddS
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <View className="w-full max-w-md mx-auto px-6 pt-2">
 
               {/* Description / List Name */}

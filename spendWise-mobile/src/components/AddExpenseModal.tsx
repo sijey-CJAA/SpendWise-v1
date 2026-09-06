@@ -148,7 +148,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+          <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <View className="w-full max-w-md mx-auto px-6 pt-2">
 
               {/* Amount Input */}
