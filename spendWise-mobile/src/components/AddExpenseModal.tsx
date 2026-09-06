@@ -137,7 +137,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
     <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView 
         className="flex-1 justify-center items-center bg-black/60"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View className="bg-brand-light w-[90%] max-h-[85%] rounded-[24px] border border-white/20 overflow-hidden" style={{ shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, shadowRadius: 10, elevation: 20 }}>
           {/* Sticky Header */}

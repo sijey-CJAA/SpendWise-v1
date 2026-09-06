@@ -56,11 +56,11 @@ export default function Login() {
     <SafeAreaView className="flex-1 bg-slate-950 justify-center">
       <KeyboardAvoidingView 
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView 
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32 }}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           showsVerticalScrollIndicator={false}
         >
           <View className="w-full max-w-md self-center md:bg-slate-900 md:p-8 md:rounded-3xl md:shadow-2xl md:shadow-blue-900/20 md:border md:border-slate-800">
@@ -102,22 +102,18 @@ export default function Login() {
               <Text className="text-blue-500 font-semibold text-sm hover:text-blue-400 transition-colors">Forgot Password?</Text>
             </TouchableOpacity>
 
-            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-              <TouchableOpacity 
-                className="bg-blue-600 h-14 rounded-2xl justify-center items-center shadow-lg shadow-blue-600/30 elevation-md hover:bg-blue-500 transition-colors"
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                onPress={handleAuth}
-                activeOpacity={0.9}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
-                  <Text className="text-white text-lg font-bold tracking-wide">{isLoginMode ? 'Login' : 'Sign Up'}</Text>
-                )}
-              </TouchableOpacity>
-            </Animated.View>
+            <TouchableOpacity 
+              className="bg-blue-600 h-14 rounded-2xl justify-center items-center shadow-lg shadow-blue-600/30 elevation-md hover:bg-blue-500 transition-colors"
+              onPress={handleAuth}
+              activeOpacity={0.7}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text className="text-white text-lg font-bold tracking-wide">{isLoginMode ? 'Login' : 'Sign Up'}</Text>
+              )}
+            </TouchableOpacity>
           </View>
           
           <View className="flex-row justify-center items-center">
