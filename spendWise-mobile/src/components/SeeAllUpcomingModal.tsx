@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { deleteUpcomingPayment } from '../services/expenseService';
+import { useCustomAlert } from './CustomAlertProvider';
 
 interface SeeAllUpcomingModalProps {
   visible: boolean;
@@ -12,6 +13,7 @@ interface SeeAllUpcomingModalProps {
 
 export default function SeeAllUpcomingModal({ visible, onClose, payments, onEdit }: SeeAllUpcomingModalProps) {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const { showAlert } = useCustomAlert();
 
   const getCategoryIcon = (categoryId: string) => {
     switch (categoryId) {
@@ -39,7 +41,7 @@ export default function SeeAllUpcomingModal({ visible, onClose, payments, onEdit
 
   const handleDelete = (id: string, name: string) => {
     setActiveMenuId(null);
-    Alert.alert(
+    showAlert(
       "Delete Upcoming Payment",
       `Are you sure you want to delete ${name}?`,
       [
@@ -51,7 +53,7 @@ export default function SeeAllUpcomingModal({ visible, onClose, payments, onEdit
             try {
               await deleteUpcomingPayment(id);
             } catch (error) {
-              Alert.alert("Error", "Could not delete payment.");
+              showAlert("Error", "Could not delete payment.");
             }
           }
         }

@@ -39,7 +39,15 @@ export default function UpdateModal() {
         
         if (lastPrompted !== today) {
           setLatestVersion(fetchedTag);
-          setReleaseUrl(data.html_url);
+          
+          // Try to find the direct APK download link to make it automatic
+          const apkAsset = data.assets?.find((asset: any) => asset.name && asset.name.endsWith('.apk'));
+          if (apkAsset && apkAsset.browser_download_url) {
+            setReleaseUrl(apkAsset.browser_download_url);
+          } else {
+            setReleaseUrl(data.html_url);
+          }
+          
           setIsVisible(true);
         }
       }

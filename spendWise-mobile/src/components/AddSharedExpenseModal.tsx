@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, Keyboard
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SharedExpenseItem } from '../services/expenseService';
+import { useCustomAlert } from './CustomAlertProvider';
 
 interface AddSharedExpenseModalProps {
   visible: boolean;
@@ -18,6 +19,7 @@ export default function AddSharedExpenseModal({ visible, onClose, onSave }: AddS
   const [dueDate, setDueDate] = useState(() => new Date().toISOString());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { showAlert } = useCustomAlert();
   
   // Reset fields when opened
   useEffect(() => {
@@ -65,21 +67,21 @@ export default function AddSharedExpenseModal({ visible, onClose, onSave }: AddS
 
   const handleSave = async () => {
     if (totalAmount <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter at least one item with a valid price.');
+      showAlert('Invalid Amount', 'Please enter at least one item with a valid price.');
       return;
     }
     if (!description.trim()) {
-      Alert.alert('Missing Description', 'Please enter a description.');
+      showAlert('Missing Description', 'Please enter a description.');
       return;
     }
     if (!personEmail.trim()) {
-      Alert.alert('Missing Email', 'Please enter the email of the person to share with.');
+      showAlert('Missing Email', 'Please enter the email of the person to share with.');
       return;
     }
 
     const validItems = items.filter(item => item.name.trim() !== '' && item.price > 0);
     if (validItems.length === 0) {
-      Alert.alert('Invalid Items', 'Please provide valid names and prices for the items.');
+      showAlert('Invalid Items', 'Please provide valid names and prices for the items.');
       return;
     }
 
@@ -96,7 +98,7 @@ export default function AddSharedExpenseModal({ visible, onClose, onSave }: AddS
       });
       onClose(); // Auto close the modal on success
     } catch (error) {
-      Alert.alert('Error', 'Failed to save shared expense. Please try again.');
+      showAlert('Error', 'Failed to save shared expense. Please try again.');
     } finally {
       setIsSaving(false);
     }

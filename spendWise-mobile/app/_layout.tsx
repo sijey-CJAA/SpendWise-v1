@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { auth } from '../src/config/firebase';
 import '../src/services/syncService'; // Initialize offline sync listener
 import UpdateModal from '../src/components/UpdateModal';
+import { CustomAlertProvider } from '../src/components/CustomAlertProvider';
 
 export default function Layout() {
   const [initializing, setInitializing] = useState(true);
@@ -34,7 +35,7 @@ export default function Layout() {
   if (initializing) return null;
 
   return (
-    <>
+    <CustomAlertProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="dashboard" />
@@ -43,6 +44,6 @@ export default function Layout() {
         <Stack.Screen name="history" />
       </Stack>
       <UpdateModal />
-    </>
+    </CustomAlertProvider>
   );
 }

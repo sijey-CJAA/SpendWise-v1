@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, Keyboard
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addExpense } from '../services/expenseService';
+import { useCustomAlert } from './CustomAlertProvider';
 
 interface AddExpenseModalProps {
   visible: boolean;
@@ -20,6 +21,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
   const [notes, setNotes] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { showAlert } = useCustomAlert();
   
   // Reset fields when opened or initialData changes
   useEffect(() => {
@@ -89,19 +91,19 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
 
   const handleSave = async () => {
     if (!amount || isNaN(Number(amount))) {
-      Alert.alert('Invalid Amount', 'Please enter a valid expense amount.');
+      showAlert('Invalid Amount', 'Please enter a valid expense amount.');
       return;
     }
     if (!expenseName.trim()) {
-      Alert.alert('Missing Name', 'Please enter a name for this expense.');
+      showAlert('Missing Name', 'Please enter a name for this expense.');
       return;
     }
     if (!category) {
-      Alert.alert('Missing Category', 'Please select a category.');
+      showAlert('Missing Category', 'Please select a category.');
       return;
     }
     if (!paymentMethod) {
-      Alert.alert('Missing Payment Method', 'Please select a payment method.');
+      showAlert('Missing Payment Method', 'Please select a payment method.');
       return;
     }
 
@@ -127,7 +129,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
       
       onClose(); // Auto close the modal on success
     } catch (error) {
-      Alert.alert('Error', 'Failed to save expense. Please try again.');
+      showAlert('Error', 'Failed to save expense. Please try again.');
     } finally {
       setIsSaving(false);
     }

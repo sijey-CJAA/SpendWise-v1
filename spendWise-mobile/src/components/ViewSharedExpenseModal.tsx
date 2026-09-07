@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { SharedExpenseData, updateSharedExpense } from '../services/expenseService';
 import { storage, auth } from '../config/firebase';
+import { useCustomAlert } from './CustomAlertProvider';
 
 interface ViewSharedExpenseModalProps {
   visible: boolean;
@@ -14,6 +15,7 @@ interface ViewSharedExpenseModalProps {
 
 export default function ViewSharedExpenseModal({ visible, onClose, expense }: ViewSharedExpenseModalProps) {
   const [isUpdating, setIsUpdating] = useState(false);
+  const { showAlert } = useCustomAlert();
 
   useEffect(() => {
     const markAsSeen = async () => {
@@ -50,7 +52,7 @@ export default function ViewSharedExpenseModal({ visible, onClose, expense }: Vi
     try {
       await updateSharedExpense(expense.id, { status: 'awaiting_approval' });
     } catch (error) {
-      Alert.alert('Error', 'Failed to update status.');
+      showAlert('Error', 'Failed to update status.');
     } finally {
       setIsUpdating(false);
     }
@@ -62,7 +64,7 @@ export default function ViewSharedExpenseModal({ visible, onClose, expense }: Vi
     try {
       await updateSharedExpense(expense.id, { status: 'paid' });
     } catch (error) {
-      Alert.alert('Error', 'Failed to approve payment.');
+      showAlert('Error', 'Failed to approve payment.');
     } finally {
       setIsUpdating(false);
     }
@@ -73,7 +75,7 @@ export default function ViewSharedExpenseModal({ visible, onClose, expense }: Vi
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (permissionResult.granted === false) {
-        Alert.alert("Permission to access camera roll is required!");
+        showAlert("Permission required", "Permission to access camera roll is required!");
         return;
       }
 
@@ -104,7 +106,7 @@ export default function ViewSharedExpenseModal({ visible, onClose, expense }: Vi
       // Update Firestore
       await updateSharedExpense(expense.id, { receiptUrl: downloadURL });
     } catch (error) {
-      Alert.alert('Error', 'Failed to upload receipt.');
+      showAlert('Error', 'Failed to upload receipt.');
       console.error(error);
     } finally {
       setIsUpdating(false);

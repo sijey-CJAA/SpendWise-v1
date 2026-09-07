@@ -1,20 +1,22 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { auth, signOut } from '../config/firebase';
 import BottomNavBar from '../components/BottomNavBar';
+import { useCustomAlert } from '../components/CustomAlertProvider';
 
 export default function Profile() {
   const router = useRouter();
+  const { showAlert } = useCustomAlert();
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
       router.replace('/');
     } catch (error: any) {
-      Alert.alert('Logout Failed', error.message);
+      showAlert('Logout Failed', error.message);
     }
   };
 

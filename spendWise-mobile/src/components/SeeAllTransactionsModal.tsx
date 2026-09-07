@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ExpenseData, deleteExpense } from '../services/expenseService';
+import { useCustomAlert } from './CustomAlertProvider';
 
 interface SeeAllTransactionsModalProps {
   visible: boolean;
@@ -12,6 +13,7 @@ interface SeeAllTransactionsModalProps {
 
 export default function SeeAllTransactionsModal({ visible, onClose, transactions, onEdit }: SeeAllTransactionsModalProps) {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const { showAlert } = useCustomAlert();
 
   const getCategoryIcon = (categoryId: string) => {
     switch (categoryId) {
@@ -33,7 +35,7 @@ export default function SeeAllTransactionsModal({ visible, onClose, transactions
 
   const handleDelete = (id: string, name: string) => {
     setActiveMenuId(null);
-    Alert.alert(
+    showAlert(
       "Delete Expense",
       `Are you sure you want to delete ${name}?`,
       [
@@ -45,7 +47,7 @@ export default function SeeAllTransactionsModal({ visible, onClose, transactions
             try {
               await deleteExpense(id);
             } catch (error) {
-              Alert.alert("Error", "Could not delete expense.");
+              showAlert("Error", "Could not delete expense.");
             }
           }
         }

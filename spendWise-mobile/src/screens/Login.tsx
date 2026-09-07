@@ -4,13 +4,19 @@ import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useCustomAlert } from '../components/CustomAlertProvider';
 
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { showAlert } = useCustomAlert();
   
   // Animation value for button press
   const scaleAnim = new Animated.Value(1);
@@ -33,7 +39,7 @@ export default function Login() {
   const handleAuth = async () => {
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
+      showAlert('Error', 'Please enter both email and password.');
       return;
     }
 
@@ -42,11 +48,16 @@ export default function Login() {
       if (isLoginMode) {
         await signInWithEmailAndPassword(auth, trimmedEmail, password);
       } else {
+        if (password !== confirmPassword) {
+          showAlert('Error', 'Passwords do not match.');
+          setIsLoading(false);
+          return;
+        }
         await createUserWithEmailAndPassword(auth, trimmedEmail, password);
       }
       router.replace('/dashboard');
     } catch (error: any) {
-      Alert.alert('Authentication Failed', error.message);
+      showAlert('Authentication Failed', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -88,19 +99,47 @@ export default function Login() {
 
             <View className="mb-5">
               <Text className="text-sm font-semibold text-blue-400 mb-2">Password</Text>
-              <TextInput
-                className="bg-slate-800 h-14 rounded-2xl px-4 text-base text-white border border-slate-700 shadow-sm shadow-black/5 elevation-sm"
-                placeholder="Enter your password"
-                placeholderTextColor="#9ca3af"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
+              <View className="flex-row items-center bg-slate-800 h-14 rounded-2xl px-4 border border-slate-700 shadow-sm shadow-black/5 elevation-sm">
+                <TextInput
+                  className="flex-1 text-base text-white h-full"
+                  placeholder="Enter your password"
+                  placeholderTextColor="#9ca3af"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#9ca3af" />
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <TouchableOpacity className="self-end mb-8">
-              <Text className="text-blue-500 font-semibold text-sm hover:text-blue-400 transition-colors">Forgot Password?</Text>
-            </TouchableOpacity>
+            {!isLoginMode && (
+              <View className="mb-5">
+                <Text className="text-sm font-semibold text-blue-400 mb-2">Confirm Password</Text>
+                <View className="flex-row items-center bg-slate-800 h-14 rounded-2xl px-4 border border-slate-700 shadow-sm shadow-black/5 elevation-sm">
+                  <TextInput
+                    className="flex-1 text-base text-white h-full"
+                    placeholder="Confirm your password"
+                    placeholderTextColor="#9ca3af"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPassword}
+                  />
+                  <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color="#9ca3af" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {isLoginMode && (
+              <TouchableOpacity className="self-end mb-8" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text className="text-blue-500 font-semibold text-sm hover:text-blue-400 transition-colors">Forgot Password?</Text>
+              </TouchableOpacity>
+            )}
+            
+            {!isLoginMode && <View className="h-4" />}
 
             <TouchableOpacity 
               className="bg-blue-600 h-14 rounded-2xl justify-center items-center shadow-lg shadow-blue-600/30 elevation-md hover:bg-blue-500 transition-colors"
@@ -116,9 +155,13 @@ export default function Login() {
             </TouchableOpacity>
           </View>
           
-          <View className="flex-row justify-center items-center">
+          <View className="flex-row justify-center items-center mt-4 pb-4">
             <Text className="text-slate-400 text-base">{isLoginMode ? "Don't have an account? " : "Already have an account? "}</Text>
-            <TouchableOpacity onPress={() => setIsLoginMode(!isLoginMode)}>
+            <TouchableOpacity 
+              onPress={() => setIsLoginMode(!isLoginMode)}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              className="p-2 -m-2"
+            >
               <Text className="text-blue-500 text-base font-bold hover:text-blue-400 transition-colors">{isLoginMode ? 'Sign up' : 'Login'}</Text>
             </TouchableOpacity>
           </View>
