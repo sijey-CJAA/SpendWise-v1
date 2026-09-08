@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Animated, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '../config/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCustomAlert } from '../components/CustomAlertProvider';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Login() {
   const router = useRouter();
@@ -17,24 +18,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { showAlert } = useCustomAlert();
-  
-  // Animation value for button press
-  const scaleAnim = new Animated.Value(1);
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      bounciness: 10,
-    }).start();
-  };
 
   const handleAuth = async () => {
     const trimmedEmail = email.trim();
@@ -64,110 +47,158 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-950 justify-center">
+    <SafeAreaView className="flex-1 bg-slate-950">
       <KeyboardAvoidingView 
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView 
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingVertical: 20, justifyContent: 'center' }}
           keyboardShouldPersistTaps="always"
           showsVerticalScrollIndicator={false}
         >
-          <View className="w-full max-w-md self-center md:bg-slate-900 md:p-8 md:rounded-3xl md:shadow-2xl md:shadow-blue-900/20 md:border md:border-slate-800">
+          {/* Header Section */}
           <View className="items-center mb-10">
-            <View className="w-20 h-20 rounded-full bg-slate-800 justify-center items-center mb-6 shadow-lg shadow-blue-500/20 elevation-lg md:border md:border-slate-700">
-              <ExpoImage source={require('../../assets/SpendWiseLogo_login.svg')} className="w-12 h-12" style={{ width: 48, height: 48 }} contentFit="contain" />
+            <View className="w-24 h-24 justify-center items-center mb-6">
+              <ExpoImage 
+                source={require('../../assets/login.svg')} 
+                className="w-full h-full" 
+                contentFit="contain" 
+              />
             </View>
-            <Text className="text-3xl font-extrabold text-white mb-2">{isLoginMode ? 'SpendWise' : 'Create Account'}</Text>
-            <Text className="text-base text-slate-400 text-center">{isLoginMode ? 'Sign in to manage your finances.' : 'Join SpendWise to track expenses.'}</Text>
+            <Text className="text-4xl font-extrabold text-white mb-2 leading-[44px] text-center">
+              {isLoginMode ? (
+                <Text>Welcome to{'\n'}<Text className="text-blue-500">Spend</Text>Wise</Text>
+              ) : (
+                'Create\nAccount'
+              )}
+            </Text>
+            <Text className="text-base text-slate-400 text-center">
+              {isLoginMode ? 'Sign in to your account' : 'Sign up to get started'}
+            </Text>
           </View>
 
-          <View className="mb-8">
-            <View className="mb-5">
-              <Text className="text-sm font-semibold text-blue-400 mb-2">Email Address</Text>
+          {/* Form Section */}
+          <View className="mb-6">
+            <View className="bg-slate-900 h-14 rounded-2xl flex-row items-center px-4 mb-4 border border-slate-800">
+              <Ionicons name="person-outline" size={20} color="#94a3b8" className="mr-3" />
               <TextInput
-                className="bg-slate-800 h-14 rounded-2xl px-4 text-base text-white border border-slate-700 shadow-sm shadow-black/5 elevation-sm"
-                placeholder="Enter your email"
-                placeholderTextColor="#9ca3af"
+                className="flex-1 text-base text-white ml-3 outline-none"
+                placeholder="Email or Phone"
+                placeholderTextColor="#94a3b8"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                style={Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}}
               />
             </View>
 
-            <View className="mb-5">
-              <Text className="text-sm font-semibold text-blue-400 mb-2">Password</Text>
-              <View className="flex-row items-center bg-slate-800 h-14 rounded-2xl px-4 border border-slate-700 shadow-sm shadow-black/5 elevation-sm">
-                <TextInput
-                  className="flex-1 text-base text-white h-full"
-                  placeholder="Enter your password"
-                  placeholderTextColor="#9ca3af"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#9ca3af" />
-                </TouchableOpacity>
-              </View>
+            <View className="bg-slate-900 h-14 rounded-2xl flex-row items-center px-4 border border-slate-800">
+              <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" className="mr-3" />
+              <TextInput
+                className="flex-1 text-base text-white ml-3 outline-none"
+                placeholder="Password"
+                placeholderTextColor="#94a3b8"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                style={Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#94a3b8" />
+              </TouchableOpacity>
             </View>
 
             {!isLoginMode && (
-              <View className="mb-5">
-                <Text className="text-sm font-semibold text-blue-400 mb-2">Confirm Password</Text>
-                <View className="flex-row items-center bg-slate-800 h-14 rounded-2xl px-4 border border-slate-700 shadow-sm shadow-black/5 elevation-sm">
-                  <TextInput
-                    className="flex-1 text-base text-white h-full"
-                    placeholder="Confirm your password"
-                    placeholderTextColor="#9ca3af"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry={!showConfirmPassword}
-                  />
-                  <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color="#9ca3af" />
-                  </TouchableOpacity>
-                </View>
+              <View className="bg-slate-900 h-14 rounded-2xl flex-row items-center px-4 border border-slate-800 mt-4">
+                <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" className="mr-3" />
+                <TextInput
+                  className="flex-1 text-base text-white ml-3 outline-none"
+                  placeholder="Confirm Password"
+                  placeholderTextColor="#94a3b8"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  style={Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}}
+                />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#94a3b8" />
+                </TouchableOpacity>
               </View>
             )}
 
             {isLoginMode && (
-              <TouchableOpacity className="self-end mb-8" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Text className="text-blue-500 font-semibold text-sm hover:text-blue-400 transition-colors">Forgot Password?</Text>
+              <TouchableOpacity className="self-end mt-4 mb-2" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text className="text-blue-500 font-medium text-sm">Forgot Password?</Text>
               </TouchableOpacity>
             )}
             
-            {!isLoginMode && <View className="h-4" />}
+            {!isLoginMode && <View className="h-6" />}
+          </View>
 
-            <TouchableOpacity 
-              className="bg-blue-600 h-14 rounded-2xl justify-center items-center shadow-lg shadow-blue-600/30 elevation-md hover:bg-blue-500 transition-colors"
-              onPress={handleAuth}
-              activeOpacity={0.7}
-              disabled={isLoading}
+          {/* Login Button */}
+          <TouchableOpacity 
+            onPress={handleAuth}
+            activeOpacity={0.8}
+            disabled={isLoading}
+            className="mb-8 rounded-2xl overflow-hidden"
+          >
+            <LinearGradient
+              colors={['#3B82F6', '#1E40AF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              className="h-14 justify-center items-center shadow-lg shadow-blue-500/30"
             >
               {isLoading ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
-                <Text className="text-white text-lg font-bold tracking-wide">{isLoginMode ? 'Login' : 'Sign Up'}</Text>
+                <Text className="text-white text-lg font-bold">{isLoginMode ? 'Login' : 'Sign Up'}</Text>
               )}
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          {/* Separator 
+          <View className="flex-row items-center mb-8">
+            <View className="flex-1 h-[1px] bg-slate-800" />
+            <Text className="text-slate-400 px-4 text-sm font-medium">or continue with</Text>
+            <View className="flex-1 h-[1px] bg-slate-800" />
+          </View>
+          */}
+
+          {/* Social Buttons 
+          <View className="flex-row justify-center space-x-4 mb-10 gap-4">
+            <TouchableOpacity className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 justify-center items-center">
+              <Ionicons name="logo-google" size={24} color="#EA4335" />
+            </TouchableOpacity>
+            <TouchableOpacity className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 justify-center items-center">
+              <Ionicons name="logo-apple" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 justify-center items-center">
+              <Ionicons name="logo-github" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          
-          <View className="flex-row justify-center items-center mt-4 pb-4">
-            <Text className="text-slate-400 text-base">{isLoginMode ? "Don't have an account? " : "Already have an account? "}</Text>
+          */}
+
+          {/* Footer */}
+          <View className="flex-row justify-center items-center pb-8 pt-2">
+            <Text className="text-slate-400 text-base">
+              {isLoginMode ? "Don't have an account? " : "Already have an account? "}
+            </Text>
             <TouchableOpacity 
               onPress={() => setIsLoginMode(!isLoginMode)}
-              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              className="p-2 -m-2"
+              hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+              className="px-2 py-2"
             >
-              <Text className="text-blue-500 text-base font-bold hover:text-blue-400 transition-colors">{isLoginMode ? 'Sign up' : 'Login'}</Text>
+              <Text className="text-blue-500 text-lg font-extrabold tracking-wide">
+                {isLoginMode ? 'Sign up' : 'Login'}
+              </Text>
             </TouchableOpacity>
           </View>
-          </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+
