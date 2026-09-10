@@ -80,13 +80,19 @@ export const CustomAlertProvider = ({ children }: { children: ReactNode }) => {
         <Modal transparent visible={true} animationType="none">
           <View className="flex-1 justify-center items-center px-6">
             <Animated.View 
-              style={{ opacity: fadeAnim }} 
-              className="absolute inset-0 bg-slate-950/80" 
+              style={{ 
+                opacity: fadeAnim, 
+                position: 'absolute', 
+                top: 0, left: 0, right: 0, bottom: 0, 
+                backgroundColor: 'rgba(0,0,0,0.8)' 
+              }} 
             />
             
             <Animated.View 
               style={{ 
                 opacity: fadeAnim,
+                width: '100%',
+                maxWidth: 384,
                 transform: [{
                   scale: fadeAnim.interpolate({
                     inputRange: [0, 1],
@@ -94,15 +100,15 @@ export const CustomAlertProvider = ({ children }: { children: ReactNode }) => {
                   })
                 }]
               }}
-              className="bg-slate-900 w-full max-w-sm rounded-3xl p-6 border border-slate-800 shadow-2xl shadow-blue-900/20"
             >
-              <View className="items-center mb-4">
-                <View className="w-12 h-12 rounded-full bg-slate-800 justify-center items-center mb-3">
+              <View className="bg-brand-card-bg w-full rounded-3xl p-6 border border-[#333333] shadow-lg">
+                <View className="items-center mb-4">
+                <View className="w-12 h-12 rounded-full bg-brand-light justify-center items-center mb-3 border border-[#333333]">
                   <Ionicons name="alert-circle" size={28} color="#3b82f6" />
                 </View>
                 <Text className="text-xl font-bold text-white text-center mb-2">{alertState.title}</Text>
                 {alertState.message && (
-                  <Text className="text-base text-slate-400 text-center leading-relaxed">
+                  <Text className="text-base text-gray-400 text-center leading-relaxed">
                     {alertState.message}
                   </Text>
                 )}
@@ -119,7 +125,7 @@ export const CustomAlertProvider = ({ children }: { children: ReactNode }) => {
                       onPress={() => handleButtonPress(btn.onPress)}
                       className={`py-3 px-6 rounded-xl justify-center items-center ${
                         isDestructive ? 'bg-red-500/20' : 
-                        isCancel ? 'bg-slate-800' : 'bg-blue-600'
+                        isCancel ? 'bg-brand-light border border-[#333333]' : 'bg-blue-600'
                       } ${alertState.buttons && alertState.buttons.length > 2 ? 'w-full' : 'flex-1'}`}
                     >
                       <Text className={`font-bold text-base ${
@@ -132,9 +138,10 @@ export const CustomAlertProvider = ({ children }: { children: ReactNode }) => {
                   );
                 })}
               </View>
-            </Animated.View>
-          </View>
-        </Modal>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
       )}
     </CustomAlertContext.Provider>
   );

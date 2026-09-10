@@ -40,24 +40,29 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
+    let unsubscribeExpenses: (() => void) | undefined;
+    let unsubscribeUpcoming: (() => void) | undefined;
 
-    const unsubscribeExpenses = subscribeToExpenses(user.uid, (data) => {
-      setExpenses(data);
-      setIsLoading(false);
-    });
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (user) {
+        unsubscribeExpenses = subscribeToExpenses(user.uid, (data) => {
+          setExpenses(data);
+          setIsLoading(false);
+        });
 
-    const unsubscribeUpcoming = subscribeToUpcomingPayments(user.uid, (data) => {
-      setUpcomingPayments(data);
+        unsubscribeUpcoming = subscribeToUpcomingPayments(user.uid, (data) => {
+          setUpcomingPayments(data);
+        });
+      } else {
+        setIsLoading(false);
+        router.replace('/');
+      }
     });
 
     return () => {
-      unsubscribeExpenses();
-      unsubscribeUpcoming();
+      unsubscribeAuth();
+      if (unsubscribeExpenses) unsubscribeExpenses();
+      if (unsubscribeUpcoming) unsubscribeUpcoming();
     };
   }, []);
 

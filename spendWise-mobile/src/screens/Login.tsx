@@ -72,7 +72,7 @@ export default function Login() {
             <View className="w-24 h-24 justify-center items-center mb-6">
               <ExpoImage 
                 source={require('../../assets/login.svg')} 
-                className="w-full h-full" 
+                style={{ width: 96, height: 96 }} 
                 contentFit="contain" 
               />
             </View>

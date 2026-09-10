@@ -58,11 +58,18 @@ export const addExpense = async (expenseData: ExpenseData, isSyncing = false) =>
   }
 
   try {
-    const docRef = await db.collection('expenses').add({
+    const newDoc = {
       ...expenseData,
       userId: user.uid,
       createdAt: new Date().toISOString(),
-    });
+    };
+    const docRef = await db.collection('expenses').add(newDoc);
+    
+    // Optimistic UI update for online mode
+    cachedExpenses.unshift({ ...newDoc, id: docRef.id });
+    await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
+    notifyExpenses();
+
     return docRef.id;
   } catch (error) {
     if (!isSyncing) {
@@ -139,7 +146,14 @@ export const subscribeToExpenses = (userId: string, callback: (expenses: any[]) 
         AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(expenses));
         notifyExpenses();
       },
-      (error) => console.error("Error subscribing to expenses: ", error)
+      (error) => {
+        console.error("Error subscribing to expenses: ", error);
+        import('react-native').then(({ Alert }) => {
+          Alert.alert("Firebase Error", error.message || "Failed to load expenses");
+        });
+        // Ensure UI doesn't hang forever
+        callback([...cachedExpenses]);
+      }
     );
 
   return () => {
