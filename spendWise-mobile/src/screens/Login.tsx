@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '../config/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +18,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { showAlert } = useCustomAlert();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        router.replace('/dashboard');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
   const handleAuth = async () => {
     const trimmedEmail = email.trim();

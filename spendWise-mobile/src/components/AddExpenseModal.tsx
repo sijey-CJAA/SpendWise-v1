@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, Modal, ActivityIndicator, Alert, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addExpense } from '../services/expenseService';
 import { useCustomAlert } from './CustomAlertProvider';
@@ -230,18 +231,33 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
                 <View className="flex flex-col mt-2">
                   <Text className="text-[14px] text-gray-400 mb-2 ml-1">Payment Method</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2 pb-2">
-                    {['Cash', 'GCash', 'Maya', 'Bank', 'Card'].map((method, i) => (
-                      <TouchableOpacity 
-                        key={i}
-                        className={`px-4 py-2 rounded-full mr-2 flex-row items-center gap-2 ${paymentMethod === method ? 'bg-[#2563eb]' : 'bg-brand-card-bg border border-[#333333]'}`}
-                        onPress={() => setPaymentMethod(method)}
-                      >
-                        {method === 'Cash' && <Ionicons name="cash-outline" size={16} color={paymentMethod === method ? "#ffffff" : "#ffffff"} />}
-                        {method === 'Bank' && <Ionicons name="business-outline" size={16} color={paymentMethod === method ? "#ffffff" : "#ffffff"} />}
-                        {method === 'Card' && <Ionicons name="card-outline" size={16} color={paymentMethod === method ? "#ffffff" : "#ffffff"} />}
-                        <Text className={paymentMethod === method ? "text-white font-bold" : "text-brand-dark font-semibold"}>{method}</Text>
-                      </TouchableOpacity>
-                    ))}
+                    {['Cash', 'GCash', 'MariBank', 'LandBank', 'GoTyme'].map((method, i) => {
+                      if (method === 'Cash') {
+                        return (
+                          <TouchableOpacity 
+                            key={i}
+                            className={`w-[105px] h-[40px] rounded-full mr-2 flex-row items-center justify-center gap-2 ${paymentMethod === method ? 'bg-[#2563eb]' : 'bg-brand-card-bg border border-[#333333]'}`}
+                            onPress={() => setPaymentMethod(method)}
+                          >
+                            <Ionicons name="cash-outline" size={16} color="#ffffff" />
+                            <Text className={paymentMethod === method ? "text-white font-bold" : "text-brand-dark font-semibold"}>{method}</Text>
+                          </TouchableOpacity>
+                        );
+                      }
+
+                      return (
+                        <TouchableOpacity 
+                          key={i}
+                          className={`mr-2 w-[105px] h-[40px] rounded-full border-2 overflow-hidden justify-center items-center ${paymentMethod === method ? 'border-[#2563eb]' : 'border-transparent'}`}
+                          onPress={() => setPaymentMethod(method)}
+                        >
+                          {method === 'GCash' && <Image source={require('../../assets/banks/GCASH.svg')} style={{ width: '100%', height: '100%' }} contentFit="contain" />}
+                          {method === 'MariBank' && <Image source={require('../../assets/banks/MARIBANK.svg')} style={{ width: '100%', height: '100%' }} contentFit="contain" />}
+                          {method === 'LandBank' && <Image source={require('../../assets/banks/LANDBANK.svg')} style={{ width: '100%', height: '100%' }} contentFit="contain" />}
+                          {method === 'GoTyme' && <Image source={require('../../assets/banks/GOTYME.svg')} style={{ width: '100%', height: '100%' }} contentFit="contain" />}
+                        </TouchableOpacity>
+                      );
+                    })}
                   </ScrollView>
                 </View>
 
