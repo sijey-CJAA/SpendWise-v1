@@ -1,17 +1,18 @@
-import firebase from 'firebase/compat/app';
-// Removing compat auth because it conflicts with modular Auth
-import 'firebase/compat/firestore';
-import 'firebase/compat/storage';
+import { initializeApp, getApp, getApps } from 'firebase/app';
 import { 
   initializeAuth, 
   signInWithEmailAndPassword as _signInWithEmailAndPassword,
   createUserWithEmailAndPassword as _createUserWithEmailAndPassword,
   signOut as _signOut,
-  onAuthStateChanged as _onAuthStateChanged,
-  User
+  onAuthStateChanged as _onAuthStateChanged
 } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { getReactNativePersistence } from 'firebase/auth/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+import 'firebase/compat/storage';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -23,25 +24,33 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+// 1. Initialize Modular App first
+let modularApp;
+if (!getApps().length) {
+  modularApp = initializeApp(firebaseConfig);
+} else {
+  modularApp = getApp();
+}
+
+// 2. Initialize Modular Auth with the Modular App instance
+const modularAuth = initializeAuth(modularApp, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
+
+// 3. Initialize Compat App (it will automatically share the modular app instance)
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
 const app = firebase.app();
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-// Properly initialize the modular auth with AsyncStorage
-const modularAuth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
-
-// Mock the compat Auth object so we don't break existing files
+// 4. Mock the compat Auth object for existing screens
 const auth = {
   get currentUser() { return modularAuth.currentUser; },
   onAuthStateChanged: (callback: (user: User | null) => void) => _onAuthStateChanged(modularAuth, callback),
 };
-
-const db = firebase.firestore();
-const storage = firebase.storage();
 
 // Wrapper functions
 export const signInWithEmailAndPassword = (authObj: any, email: any, password: any) => _signInWithEmailAndPassword(modularAuth, email, password);
