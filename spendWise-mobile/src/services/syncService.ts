@@ -27,7 +27,7 @@ class SyncService {
   private init() {
     NetInfo.addEventListener(state => {
       const wasOffline = !this.isOnline;
-      this.isOnline = !!state.isConnected && !!state.isInternetReachable;
+      this.isOnline = state.isConnected === true && state.isInternetReachable !== false;
       
       if (wasOffline && this.isOnline) {
         this.processQueue();
@@ -35,7 +35,7 @@ class SyncService {
     });
 
     NetInfo.fetch().then(state => {
-      this.isOnline = !!state.isConnected && !!state.isInternetReachable;
+      this.isOnline = state.isConnected === true && state.isInternetReachable !== false;
     });
   }
 

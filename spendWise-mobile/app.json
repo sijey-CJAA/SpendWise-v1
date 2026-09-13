@@ -3,7 +3,7 @@
     "name": "SpendWise",
     "slug": "spendwise-mobile",
     "scheme": "spendwise-mobile",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
@@ -11,7 +11,7 @@
     },
     "android": {
       "package": "com.spendwise.app",
-      "versionCode": 10
+      "versionCode": 11
     },
     "web": {},
     "icon": "./assets/applogo.png",

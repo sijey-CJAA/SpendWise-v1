@@ -1,6 +1,6 @@
 {
   "name": "spendwise-mobile",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -12,7 +12,7 @@
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
-    "@react-native-community/netinfo": "11.4.1",
+    "@react-native-community/netinfo": "^11.4.1",
     "expo": "^54.0.0",
     "expo-constants": "~18.0.13",
     "expo-image": "~3.0.11",
