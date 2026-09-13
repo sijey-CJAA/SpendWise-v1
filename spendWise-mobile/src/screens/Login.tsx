@@ -93,29 +93,33 @@ export default function Login() {
             <View className="bg-slate-900 h-14 rounded-2xl flex-row items-center px-4 mb-4 border border-slate-800">
               <Ionicons name="person-outline" size={20} color="#94a3b8" className="mr-3" />
               <TextInput
-                className="flex-1 text-base text-white ml-3 outline-none"
+                className="flex-1 text-base text-white ml-3 outline-none h-full"
                 placeholder="Email or Phone"
                 placeholderTextColor="#94a3b8"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                style={Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}}
+                selectionColor="#3b82f6"
+                cursorColor="#3b82f6"
+                style={Platform.OS === 'web' ? { outlineStyle: 'none', backgroundColor: 'transparent' } as any : { backgroundColor: '#0f172a' }}
               />
             </View>
 
             <View className="bg-slate-900 h-14 rounded-2xl flex-row items-center px-4 border border-slate-800">
               <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" className="mr-3" />
               <TextInput
-                className="flex-1 text-base text-white ml-3 outline-none"
+                className="flex-1 text-base text-white ml-3 outline-none h-full"
                 placeholder="Password"
                 placeholderTextColor="#94a3b8"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                style={Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}}
+                selectionColor="#3b82f6"
+                cursorColor="#3b82f6"
+                style={Platform.OS === 'web' ? { outlineStyle: 'none', backgroundColor: 'transparent' } as any : { backgroundColor: '#0f172a' }}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} className="ml-2">
                 <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#94a3b8" />
               </TouchableOpacity>
             </View>
@@ -124,15 +128,17 @@ export default function Login() {
               <View className="bg-slate-900 h-14 rounded-2xl flex-row items-center px-4 border border-slate-800 mt-4">
                 <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" className="mr-3" />
                 <TextInput
-                  className="flex-1 text-base text-white ml-3 outline-none"
+                  className="flex-1 text-base text-white ml-3 outline-none h-full"
                   placeholder="Confirm Password"
                   placeholderTextColor="#94a3b8"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
-                  style={Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}}
+                  selectionColor="#3b82f6"
+                  cursorColor="#3b82f6"
+                  style={Platform.OS === 'web' ? { outlineStyle: 'none', backgroundColor: 'transparent' } as any : { backgroundColor: '#0f172a' }}
                 />
-                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} className="ml-2">
                   <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#94a3b8" />
                 </TouchableOpacity>
               </View>

@@ -1,8 +1,15 @@
 import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
+// Removing compat auth because it conflicts with modular Auth
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
-import { initializeAuth } from 'firebase/auth';
+import { 
+  initializeAuth, 
+  signInWithEmailAndPassword as _signInWithEmailAndPassword,
+  createUserWithEmailAndPassword as _createUserWithEmailAndPassword,
+  signOut as _signOut,
+  onAuthStateChanged as _onAuthStateChanged,
+  User
+} from 'firebase/auth';
 import { getReactNativePersistence } from 'firebase/auth/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -22,19 +29,23 @@ if (!firebase.apps.length) {
 
 const app = firebase.app();
 
-// Initialize the modular auth with AsyncStorage to enable persistence
-initializeAuth(app, {
+// Properly initialize the modular auth with AsyncStorage
+const modularAuth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage)
 });
 
-// Get the compat auth which will now use the properly configured persistence
-const auth = firebase.auth();
+// Mock the compat Auth object so we don't break existing files
+const auth = {
+  get currentUser() { return modularAuth.currentUser; },
+  onAuthStateChanged: (callback: (user: User | null) => void) => _onAuthStateChanged(modularAuth, callback),
+};
+
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// Wrapper functions to maintain compatibility with our Login/Dashboard screens
-export const signInWithEmailAndPassword = (authObj: any, email: any, password: any) => authObj.signInWithEmailAndPassword(email, password);
-export const createUserWithEmailAndPassword = (authObj: any, email: any, password: any) => authObj.createUserWithEmailAndPassword(email, password);
-export const signOut = (authObj: any) => authObj.signOut();
+// Wrapper functions
+export const signInWithEmailAndPassword = (authObj: any, email: any, password: any) => _signInWithEmailAndPassword(modularAuth, email, password);
+export const createUserWithEmailAndPassword = (authObj: any, email: any, password: any) => _createUserWithEmailAndPassword(modularAuth, email, password);
+export const signOut = (authObj: any) => _signOut(modularAuth);
 
 export { app, auth, db, storage };
