@@ -11,7 +11,8 @@
     },
     "android": {
       "package": "com.spendwise.app",
-      "versionCode": 13
+      "versionCode": 13,
+      "permissions": ["android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE"]
     },
     "web": {},
     "icon": "./assets/applogo.png",
