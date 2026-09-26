@@ -28,9 +28,18 @@ jobs:
           java-version: '17'
 
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
+          accept-android-sdk-licenses: true
+
       - name: Install npm dependencies
         working-directory: ./spendWise-mobile
-        run: npm install
+        run: npm ci
 
       - name: Prebuild Android project (Expo)
         working-directory: ./spendWise-mobile
