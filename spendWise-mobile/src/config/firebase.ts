@@ -1,4 +1,4 @@
-import { initializeApp, getApp, getApps } from 'firebase/app';
+// removed initializeApp, getApp, getApps
 import { 
   initializeAuth, 
   signInWithEmailAndPassword as _signInWithEmailAndPassword,
@@ -24,20 +24,6 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// 1. Initialize Modular App first
-let modularApp;
-if (!getApps().length) {
-  modularApp = initializeApp(firebaseConfig);
-} else {
-  modularApp = getApp();
-}
-
-// 2. Initialize Modular Auth with the Modular App instance
-const modularAuth = initializeAuth(modularApp, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
-
-// 3. Initialize Compat App (it will automatically share the modular app instance)
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -45,6 +31,11 @@ if (!firebase.apps.length) {
 const app = firebase.app();
 const db = firebase.firestore();
 const storage = firebase.storage();
+
+// Initialize the modular auth with AsyncStorage to enable persistence
+const modularAuth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
 
 // 4. Mock the compat Auth object for existing screens
 const auth = {
