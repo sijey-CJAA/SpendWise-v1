@@ -224,20 +224,18 @@ export default function Dashboard() {
             className="p-6 mb-6 shadow-sm relative"
             style={{ borderRadius: 15 }}
           >
-            <TouchableOpacity 
-              className="absolute top-4 right-4 bg-white/20 px-3 py-1.5 rounded-full flex-row items-center gap-1 z-10"
-              onPress={() => setIsMonthlySpendingsModalVisible(true)}
-            >
-              <Text className="text-white text-[12px] font-bold">View Spendings</Text>
-              <Ionicons name="chevron-forward" size={14} color="#ffffff" />
-            </TouchableOpacity>
-
-            <View className="flex-row justify-between items-center mt-2">
-              <View>
-                <Text className="text-white/70 text-[14px] font-medium mb-1">Total Spendings for {currentMonthName}</Text>
-                <Text className="text-white text-[32px] font-bold">₱{currentMonthBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
-              </View>
+            <View className="flex-row justify-between items-start mb-2">
+              <Text className="text-white/70 text-[14px] font-medium flex-1 mr-2 pt-1">Total Spendings for {currentMonthName}</Text>
+              <TouchableOpacity 
+                className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center gap-1 shrink-0"
+                onPress={() => setIsMonthlySpendingsModalVisible(true)}
+              >
+                <Text className="text-white text-[12px] font-bold">View Spendings</Text>
+                <Ionicons name="chevron-forward" size={14} color="#ffffff" />
+              </TouchableOpacity>
             </View>
+            
+            <Text className="text-white text-[32px] font-bold">₱{currentMonthBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
           </LinearGradient>
 
           {/* Upcoming payment */}
