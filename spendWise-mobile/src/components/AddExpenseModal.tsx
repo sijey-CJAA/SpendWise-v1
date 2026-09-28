@@ -324,6 +324,25 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
                   )}
                 </TouchableOpacity>
 
+                {/* Delete Button */}
+                {initialData && initialData.id && (
+                  <TouchableOpacity 
+                    className="w-full bg-red-500/20 border border-red-500/50 py-4 rounded-xl mt-3 justify-center items-center hover:opacity-90 active:scale-95 transition-all"
+                    onPress={async () => {
+                      try {
+                        const { deleteExpense } = require('../services/expenseService');
+                        await deleteExpense(initialData.id);
+                        onClose();
+                      } catch (e) {
+                        showAlert('Error', 'Failed to delete expense.');
+                      }
+                    }}
+                    disabled={isSaving}
+                  >
+                    <Text className="text-red-400 font-bold text-[16px]">Delete Expense</Text>
+                  </TouchableOpacity>
+                )}
+
               </View>
             </View>
           </ScrollView>
