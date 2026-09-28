@@ -14,6 +14,8 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
 
+import { Alert } from 'react-native';
+
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -24,8 +26,12 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+try {
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+} catch (e: any) {
+  Alert.alert('Firebase Init Error', e?.message || 'Unknown error');
 }
 
 const app = firebase.app();
@@ -33,14 +39,28 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 
 // Initialize the modular auth with AsyncStorage to enable persistence
-const modularAuth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
+let modularAuth: any;
+try {
+  modularAuth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage)
+  });
+} catch (e: any) {
+  // If it's already initialized, fallback to getAuth
+  if (e?.message?.includes('already has Auth instance')) {
+    const { getAuth } = require('firebase/auth');
+    modularAuth = getAuth(app);
+  } else {
+    Alert.alert('Firebase Auth Error', e?.message || 'Unknown error');
+  }
+}
 
 // 4. Mock the compat Auth object for existing screens
 const auth = {
-  get currentUser() { return modularAuth.currentUser; },
-  onAuthStateChanged: (callback: (user: User | null) => void) => _onAuthStateChanged(modularAuth, callback),
+  get currentUser() { return modularAuth?.currentUser; },
+  onAuthStateChanged: (callback: (user: User | null) => void) => {
+    if (modularAuth) return _onAuthStateChanged(modularAuth, callback);
+    return () => {};
+  },
 };
 
 // Wrapper functions

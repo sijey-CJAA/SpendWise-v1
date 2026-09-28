@@ -122,7 +122,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
 
       if (initialData && initialData.id) {
         // Use update method (need to import updateExpense if available in expenseService)
-        const { updateExpense } = require('../services/expenseService');
+        const { updateExpense } = await import('../services/expenseService');
         await updateExpense(initialData.id, expenseData);
       } else {
         await addExpense(expenseData);
@@ -330,7 +330,7 @@ export default function AddExpenseModal({ visible, onClose, initialData }: AddEx
                     className="w-full bg-red-500/20 border border-red-500/50 py-4 rounded-xl mt-3 justify-center items-center hover:opacity-90 active:scale-95 transition-all"
                     onPress={async () => {
                       try {
-                        const { deleteExpense } = require('../services/expenseService');
+                        const { deleteExpense } = await import('../services/expenseService');
                         await deleteExpense(initialData.id);
                         onClose();
                       } catch (e) {

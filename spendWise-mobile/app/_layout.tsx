@@ -1,6 +1,18 @@
 import '../global.css';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
+
+// Add global error handler to catch fatal startup crashes in release mode
+if (typeof ErrorUtils !== 'undefined') {
+  ErrorUtils.setGlobalHandler((error, isFatal) => {
+    Alert.alert(
+      'Fatal Error',
+      `${error.name}: ${error.message}\n\n${error.stack}`
+    );
+  });
+}
+
 import { auth } from '../src/config/firebase';
 import '../src/services/syncService'; // Initialize offline sync listener
 import UpdateModal from '../src/components/UpdateModal';
