@@ -30,17 +30,26 @@ const firebaseConfig = {
 let app: any;
 try {
   if (!getApps().length) {
+    console.log('[Firebase] Initializing modular app...');
     app = initializeApp(firebaseConfig);
   } else {
+    console.log('[Firebase] Modular app already initialized, getting app...');
     app = getApp();
   }
 } catch (e: any) {
-  Alert.alert('Firebase Init Error', e?.message || 'Unknown error');
+  console.error('[Firebase] Modular Init Error:', e);
+  Alert.alert('Firebase Init Error', `Details: ${e?.message}\nCode: ${e?.code || 'N/A'}\nSee console for more details.`);
 }
 
 // Ensure compat uses the same config just in case
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+try {
+  if (!firebase.apps.length) {
+    console.log('[Firebase] Initializing compat app...');
+    firebase.initializeApp(firebaseConfig);
+  }
+} catch (e: any) {
+  console.error('[Firebase] Compat Init Error:', e);
+  Alert.alert('Firebase Compat Init Error', `Details: ${e?.message}\nCode: ${e?.code || 'N/A'}\nSee console for more details.`);
 }
 
 const db = firebase.firestore();
@@ -49,15 +58,18 @@ const storage = firebase.storage();
 // Initialize the modular auth with AsyncStorage to enable persistence
 let modularAuth: any;
 try {
+  console.log('[Firebase] Initializing modular auth with AsyncStorage...');
   modularAuth = initializeAuth(app, {
     persistence: getReactNativePersistence(AsyncStorage)
   });
 } catch (e: any) {
   // If it's already initialized, fallback to getAuth
   if (e?.message?.includes('already has Auth instance') || e?.code === 'auth/already-initialized') {
+    console.log('[Firebase] Auth already initialized, falling back to getAuth().');
     modularAuth = getAuth(app);
   } else {
-    Alert.alert('Firebase Auth Error', e?.message || 'Unknown error');
+    console.error('[Firebase] Auth Init Error:', e);
+    Alert.alert('Firebase Auth Error', `Details: ${e?.message}\nCode: ${e?.code || 'N/A'}\nSee console for more details.`);
   }
 }
 
