@@ -63,14 +63,26 @@ export const addExpense = async (expenseData: ExpenseData, isSyncing = false) =>
       userId: user.uid,
       createdAt: new Date().toISOString(),
     };
-    const docRef = await db.collection('expenses').add(newDoc);
+    
+    const tempId = 'temp_' + Date.now().toString();
     
     // Optimistic UI update for online mode
-    cachedExpenses.unshift({ ...newDoc, id: docRef.id });
+    cachedExpenses.unshift({ ...newDoc, id: tempId });
     await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
     notifyExpenses();
 
-    return docRef.id;
+    // Fire and forget the actual add to prevent freezing UI on slow networks
+    db.collection('expenses').add(newDoc).then(async (docRef) => {
+        // Update the tempId to the real id
+        cachedExpenses = cachedExpenses.map(exp => exp.id === tempId ? { ...exp, id: docRef.id } : exp);
+        await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
+        notifyExpenses();
+    }).catch(async (error) => {
+        console.warn("Online add failed, queueing offline sync:", error);
+        await syncService.queueAction('ADD_EXPENSE', expenseData);
+    });
+
+    return tempId;
   } catch (error) {
     if (!isSyncing) {
       await syncService.queueAction('ADD_EXPENSE', expenseData);

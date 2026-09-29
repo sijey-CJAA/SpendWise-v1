@@ -101,7 +101,7 @@ export default function BottomNavBar({ currentRoute }: BottomNavBarProps) {
       </View>
 
       {/* Center FAB overlapping the navbar */}
-      <View className="absolute top-0 w-[72px] h-[72px] bg-[#121212] rounded-full justify-center items-center">
+      <View className="absolute bottom-10 w-[72px] h-[72px] bg-[#121212] rounded-full justify-center items-center">
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <TouchableOpacity 
             className="w-[56px] h-[56px] bg-brand-purple rounded-full justify-center items-center shadow-lg"
