@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Modal, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { version as appVersion } from '../../package.json';
 
 export default function UpdateModal() {
   const [isVisible, setIsVisible] = useState(false);
@@ -15,8 +15,8 @@ export default function UpdateModal() {
 
   const checkForUpdates = async () => {
     try {
-      // Get current version from app.json via Constants
-      const currentVersion = Constants.expoConfig?.version || '1.0.0';
+      // Get current version from package.json directly for 100% reliability in bare builds
+      const currentVersion = appVersion || '1.0.0';
       
       const response = await fetch('https://api.github.com/repos/sijey-CJAA/SpendWise-v1/releases/latest');
       if (!response.ok) return;
@@ -90,7 +90,7 @@ export default function UpdateModal() {
           </View>
           <Text className="text-[20px] text-white font-bold mb-2 text-center">Update Available!</Text>
           <Text className="text-[14px] text-gray-400 text-center mb-6">
-            Version {latestVersion} is now available. You are currently on version {Constants.expoConfig?.version || '1.0.0'}. Would you like to update now?
+            Version {latestVersion} is now available. You are currently on version {appVersion || '1.0.0'}. Would you like to update now?
           </Text>
           <View className="flex-row gap-3 w-full">
             <TouchableOpacity
