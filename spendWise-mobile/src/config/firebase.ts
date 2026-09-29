@@ -28,6 +28,7 @@ const firebaseConfig = {
 };
 
 let app: any;
+let firebaseInitError: any = null;
 try {
   if (!getApps().length) {
     console.log('[Firebase] Initializing modular app...');
@@ -37,6 +38,7 @@ try {
     app = getApp();
   }
 } catch (e: any) {
+  firebaseInitError = e;
   console.error('[Firebase] Modular Init Error:', e);
   Alert.alert('Firebase Init Error', `Details: ${e?.message}\nCode: ${e?.code || 'N/A'}\nSee console for more details.`);
 }
@@ -48,6 +50,7 @@ try {
     firebase.initializeApp(firebaseConfig);
   }
 } catch (e: any) {
+  firebaseInitError = e;
   console.error('[Firebase] Compat Init Error:', e);
   Alert.alert('Firebase Compat Init Error', `Details: ${e?.message}\nCode: ${e?.code || 'N/A'}\nSee console for more details.`);
 }
@@ -68,6 +71,7 @@ try {
     console.log('[Firebase] Auth already initialized, falling back to getAuth().');
     modularAuth = getAuth(app);
   } else {
+    firebaseInitError = e;
     console.error('[Firebase] Auth Init Error:', e);
     Alert.alert('Firebase Auth Error', `Details: ${e?.message}\nCode: ${e?.code || 'N/A'}\nSee console for more details.`);
   }
@@ -87,4 +91,4 @@ export const signInWithEmailAndPassword = (authObj: any, email: any, password: a
 export const createUserWithEmailAndPassword = (authObj: any, email: any, password: any) => _createUserWithEmailAndPassword(modularAuth, email, password);
 export const signOut = (authObj: any) => _signOut(modularAuth);
 
-export { app, auth, db, storage };
+export { app, auth, db, storage, firebaseInitError };

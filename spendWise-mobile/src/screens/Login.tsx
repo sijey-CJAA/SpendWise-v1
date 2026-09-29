@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView } from 'react-native';
-import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '../config/firebase';
+import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, firebaseInitError } from '../config/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -69,6 +69,15 @@ export default function Login() {
         >
           {/* Header Section */}
           <View className="items-center mb-10">
+            {firebaseInitError && (
+              <View className="bg-red-500/20 p-4 rounded-xl border border-red-500 mb-6 w-full">
+                <Text className="text-red-400 font-bold mb-1 text-center">Firebase Startup Error</Text>
+                <Text className="text-red-300 text-xs text-center">{firebaseInitError?.message || 'Unknown error'}</Text>
+                {firebaseInitError?.code && <Text className="text-red-300 text-xs text-center font-bold mt-1">Code: {firebaseInitError.code}</Text>}
+                <Text className="text-red-400/80 text-xs text-center mt-2 italic">Please take a screenshot of this for the developers.</Text>
+              </View>
+            )}
+
             <View className="w-24 h-24 justify-center items-center mb-6">
               <ExpoImage 
                 source={require('../../assets/login.svg')} 
