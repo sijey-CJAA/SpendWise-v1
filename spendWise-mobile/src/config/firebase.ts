@@ -1,10 +1,11 @@
-// removed initializeApp, getApp, getApps
+import { initializeApp, getApp, getApps } from 'firebase/app';
 import { 
   initializeAuth, 
   signInWithEmailAndPassword as _signInWithEmailAndPassword,
   createUserWithEmailAndPassword as _createUserWithEmailAndPassword,
   signOut as _signOut,
-  onAuthStateChanged as _onAuthStateChanged
+  onAuthStateChanged as _onAuthStateChanged,
+  getAuth
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { getReactNativePersistence } from 'firebase/auth/react-native';
@@ -26,15 +27,22 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+let app: any;
 try {
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
   }
 } catch (e: any) {
   Alert.alert('Firebase Init Error', e?.message || 'Unknown error');
 }
 
-const app = firebase.app();
+// Ensure compat uses the same config just in case
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
 const db = firebase.firestore();
 const storage = firebase.storage();
 
@@ -46,15 +54,14 @@ try {
   });
 } catch (e: any) {
   // If it's already initialized, fallback to getAuth
-  if (e?.message?.includes('already has Auth instance')) {
-    const { getAuth } = require('firebase/auth');
+  if (e?.message?.includes('already has Auth instance') || e?.code === 'auth/already-initialized') {
     modularAuth = getAuth(app);
   } else {
     Alert.alert('Firebase Auth Error', e?.message || 'Unknown error');
   }
 }
 
-// 4. Mock the compat Auth object for existing screens
+// Mock the compat Auth object for existing screens
 const auth = {
   get currentUser() { return modularAuth?.currentUser; },
   onAuthStateChanged: (callback: (user: User | null) => void) => {
