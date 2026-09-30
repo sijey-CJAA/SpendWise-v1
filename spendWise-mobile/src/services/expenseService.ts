@@ -64,6 +64,11 @@ export const addExpense = async (expenseData: ExpenseData, isSyncing = false) =>
       createdAt: new Date().toISOString(),
     };
     
+    if (isSyncing) {
+      const docRef = await db.collection('expenses').add(newDoc);
+      return docRef.id;
+    }
+
     const tempId = 'temp_' + Date.now().toString();
     
     // Optimistic UI update for online mode
