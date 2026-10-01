@@ -127,7 +127,7 @@ export default function DeveloperDiagnosticsModal({ visible, onClose }: Develope
     >
       <View className="flex-1 bg-black/80 justify-center items-center px-4 py-8">
         <View 
-          className="w-full max-w-lg bg-slate-900 rounded-3xl border border-slate-700 shadow-2xl overflow-hidden flex-col max-h-[92%]"
+          className="w-full max-w-lg bg-slate-900 rounded-3xl border border-slate-700 shadow-2xl overflow-hidden flex-col" style={{ maxHeight: '85%' }}
         >
           {/* Header */}
           <View className="bg-slate-950 px-6 py-4 border-b border-slate-800 flex-row items-center justify-between">

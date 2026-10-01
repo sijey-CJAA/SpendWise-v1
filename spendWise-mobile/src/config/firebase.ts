@@ -74,10 +74,8 @@ try {
 // Initialize Modular Firestore with long-polling (vital for Android React Native)
 let rawDb: Firestore;
 try {
-  console.log('[Firebase] Initializing modular firestore with long polling...');
-  rawDb = initializeFirestore(app, {
-    experimentalForceLongPolling: true,
-  });
+  console.log('[Firebase] Initializing modular firestore...');
+  rawDb = initializeFirestore(app, {});
 } catch (e: any) {
   console.log('[Firebase] initializeFirestore fallback to getFirestore:', e);
   rawDb = getFirestore(app);
