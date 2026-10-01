@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-import * as expenseService from './expenseService';
 
 const SYNC_QUEUE_KEY = '@spendwise_sync_queue';
 
@@ -36,6 +35,9 @@ class SyncService {
 
     NetInfo.fetch().then(state => {
       this.isOnline = state.isConnected === true && state.isInternetReachable !== false;
+      if (this.isOnline) {
+        this.processQueue();
+      }
     });
   }
 
@@ -67,6 +69,13 @@ class SyncService {
       queue.push(newAction);
       await AsyncStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
       console.log(`Action queued: ${type}`);
+      
+      if (this.isOnline) {
+        // Try to process the queue shortly after queuing, in case it was a temporary glitch
+        setTimeout(() => {
+          this.processQueue();
+        }, 3000);
+      }
     } catch (e) {
       console.error("Error queueing action:", e);
     }
@@ -121,6 +130,7 @@ class SyncService {
   }
 
   private async executeAction(action: SyncAction): Promise<void> {
+    const expenseService = require('./expenseService');
     switch (action.type) {
       case 'ADD_EXPENSE':
         await expenseService.addExpense(action.payload, true);

@@ -151,8 +151,32 @@ export const subscribeToExpenses = (userId: string, callback: (expenses: any[]) 
   const unsubscribe = db.collection('expenses')
     .where('userId', '==', userId)
     .onSnapshot(
-      (snapshot) => {
+      async (snapshot) => {
         let expenses = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        
+        try {
+          const queue = await syncService.getQueue();
+          const pendingAdds = queue
+            .filter(a => a.type === 'ADD_EXPENSE')
+            .map(a => ({ ...a.payload, id: 'temp_' + a.id }));
+          
+          const pendingDeletes = queue.filter(a => a.type === 'DELETE_EXPENSE').map(a => a.payload.id);
+          const pendingUpdates = queue.filter(a => a.type === 'UPDATE_EXPENSE');
+          
+          expenses = expenses.filter(exp => !pendingDeletes.includes(exp.id));
+          
+          pendingUpdates.forEach(update => {
+            const idx = expenses.findIndex(e => e.id === update.payload.id);
+            if (idx !== -1) {
+              expenses[idx] = { ...expenses[idx], ...update.payload.data };
+            }
+          });
+          
+          expenses = [...expenses, ...pendingAdds];
+        } catch (error) {
+          console.error("Error applying offline queue to expenses:", error);
+        }
+
         expenses.sort((a: any, b: any) => {
           const dateA = new Date(a.createdAt || a.date).getTime();
           const dateB = new Date(b.createdAt || b.date).getTime();
@@ -236,8 +260,32 @@ export const subscribeToUpcomingPayments = (userId: string, callback: (payments:
   const unsubscribe = db.collection('upcomingPayments')
     .where('userId', '==', userId)
     .onSnapshot(
-      (snapshot) => {
+      async (snapshot) => {
         let payments = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        
+        try {
+          const queue = await syncService.getQueue();
+          const pendingAdds = queue
+            .filter(a => a.type === 'ADD_UPCOMING_PAYMENT')
+            .map(a => ({ ...a.payload, id: 'temp_' + a.id }));
+          
+          const pendingDeletes = queue.filter(a => a.type === 'DELETE_UPCOMING_PAYMENT').map(a => a.payload.id);
+          const pendingUpdates = queue.filter(a => a.type === 'UPDATE_UPCOMING_PAYMENT');
+          
+          payments = payments.filter(payment => !pendingDeletes.includes(payment.id));
+          
+          pendingUpdates.forEach(update => {
+            const idx = payments.findIndex(p => p.id === update.payload.id);
+            if (idx !== -1) {
+              payments[idx] = { ...payments[idx], ...update.payload.data };
+            }
+          });
+          
+          payments = [...payments, ...pendingAdds];
+        } catch (error) {
+          console.error("Error applying offline queue to upcoming payments:", error);
+        }
+
         payments.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
         cachedUpcomingPayments = payments;
@@ -367,7 +415,7 @@ export const subscribeToSharedExpenses = (userEmail: string, callback: (expenses
   const unsubscribe = db.collection('sharedExpenses')
     .where('involvedEmails', 'array-contains', userEmail.toLowerCase())
     .onSnapshot(
-      (snapshot) => {
+      async (snapshot) => {
         let expenses = snapshot.docs.map(doc => {
           const data = doc.data();
           const isCreator = data.creatorEmail === userEmail;
@@ -379,6 +427,35 @@ export const subscribeToSharedExpenses = (userEmail: string, callback: (expenses
           }
           return { ...data, id: doc.id, type, personEmail };
         });
+        
+        try {
+          const queue = await syncService.getQueue();
+          const pendingAdds = queue
+            .filter(a => a.type === 'ADD_SHARED_EXPENSE')
+            .map(a => {
+              const data = a.payload;
+              // format it like from server
+              let type = data.type;
+              let personEmail = data.personEmail;
+              return { ...data, id: 'temp_' + a.id, type, personEmail };
+            });
+          
+          const pendingDeletes = queue.filter(a => a.type === 'DELETE_SHARED_EXPENSE').map(a => a.payload.id);
+          const pendingUpdates = queue.filter(a => a.type === 'UPDATE_SHARED_EXPENSE');
+          
+          expenses = expenses.filter(exp => !pendingDeletes.includes(exp.id));
+          
+          pendingUpdates.forEach(update => {
+            const idx = expenses.findIndex(e => e.id === update.payload.id);
+            if (idx !== -1) {
+              expenses[idx] = { ...expenses[idx], ...update.payload.data };
+            }
+          });
+          
+          expenses = [...expenses, ...pendingAdds];
+        } catch (error) {
+          console.error("Error applying offline queue to shared expenses:", error);
+        }
         
         expenses.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 

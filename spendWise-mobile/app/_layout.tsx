@@ -89,6 +89,11 @@ function LayoutContent() {
     const subscriber = auth.onAuthStateChanged((user) => {
       setUser(user);
       if (initializing) setInitializing(false);
+      if (user) {
+        import('../src/services/syncService').then(({ syncService }) => {
+          syncService.processQueue();
+        });
+      }
     });
     return subscriber; 
   }, [initializing]);
