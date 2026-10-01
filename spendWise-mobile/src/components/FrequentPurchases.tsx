@@ -32,8 +32,7 @@ export default function FrequentPurchases({ expenses }: FrequentPurchasesProps) 
   return (
     <View className="px-6 pb-24">
       <View className="flex-row items-center mb-4">
-        <Ionicons name="cart" size={24} color="#ffffff" />
-        <Text className="text-[18px] font-bold text-white ml-2">Frequent Purchases</Text>
+        <Text className="text-[18px] font-bold text-white">Frequent Purchases</Text>
       </View>
       
       <View className="bg-[#1e1e1e] rounded-xl p-4 shadow-sm border border-[#333333]">

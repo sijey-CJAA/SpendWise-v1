@@ -72,6 +72,10 @@ export default function Analytics() {
     });
   }, [expenses, targetMonth, targetYear]);
 
+  const monthlyTotal = useMemo(() => {
+    return currentMonthExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+  }, [currentMonthExpenses]);
+
   return (
     <SafeAreaView className="flex-1 bg-[#121212]">
       <View className="flex-1 w-full relative">
@@ -122,7 +126,17 @@ export default function Analytics() {
           <SpreadsheetCalendar weeks={weeksData} />
 
           {/* Spacer */}
-          <View className="h-8" />
+          <View className="h-6" />
+
+          {/* Monthly Total */}
+          <View className="px-6 mb-6">
+            <View className="bg-[#1e1e1e] p-5 rounded-2xl flex-row justify-between items-center border border-[#333333]">
+              <View className="flex-row items-center">
+                <Text className="text-white text-lg font-bold">Monthly Total</Text>
+              </View>
+              <Text className="text-blue-400 font-bold text-xl">₱{monthlyTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+            </View>
+          </View>
 
           {/* Frequent Purchases */}
           <FrequentPurchases expenses={currentMonthExpenses} />

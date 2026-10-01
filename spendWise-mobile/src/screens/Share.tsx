@@ -95,12 +95,9 @@ export default function Share() {
           className="bg-[#2563eb] rounded-[32px] p-6 mb-6 flex-row items-center justify-between shadow-lg"
           onPress={() => setIsModalVisible(true)}
         >
-          <View className="flex-1 pr-4">
+          <View className="flex-1">
             <Text className="text-white text-[22px] font-bold mb-1">Add Shared Expense</Text>
             <Text className="text-blue-100 text-[14px]">Create a list of shared items and split the cost.</Text>
-          </View>
-          <View className="w-14 h-14 bg-white/20 rounded-full items-center justify-center">
-            <Ionicons name="receipt-outline" size={28} color="#ffffff" />
           </View>
         </TouchableOpacity>
 
@@ -182,14 +179,9 @@ export default function Share() {
                   }}
                 >
                   <View className="flex-row items-center gap-4 flex-1 pr-2">
-                    <View className="relative">
-                      <View className={`w-12 h-12 rounded-full items-center justify-center ${activeTab === 'iOwe' ? 'bg-[#1e3a8a]' : 'bg-[#333333]'}`}>
-                        <Ionicons name={activeTab === 'iOwe' ? "arrow-up" : "arrow-down"} size={20} color={activeTab === 'iOwe' ? "#60a5fa" : "#ffffff"} />
-                      </View>
-                      {isUnread && (
-                        <View className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#3b82f6] rounded-full border-2 border-brand-card-bg" />
-                      )}
-                    </View>
+                    {isUnread && (
+                      <View className="w-3.5 h-3.5 bg-[#3b82f6] rounded-full border-2 border-brand-card-bg" />
+                    )}
                     <View className="flex-1">
                       <Text className={`text-[18px] text-brand-dark ${isUnread ? 'font-black' : 'font-bold'}`} numberOfLines={1}>{expense.personEmail}</Text>
                       <Text className={`text-[12px] ${isUnread ? 'text-gray-300 font-bold' : 'text-gray-400 font-medium'}`} numberOfLines={1}>

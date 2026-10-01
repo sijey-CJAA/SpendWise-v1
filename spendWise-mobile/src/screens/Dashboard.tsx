@@ -68,17 +68,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     const now = new Date();
-    
+
     const overdue = upcomingPayments.find(payment => {
       const dueDate = new Date(payment.dueDate);
       if (dueDate >= now) return false;
-      
+
       if (payment.lastPromptedAt) {
         const lastPrompted = new Date(payment.lastPromptedAt);
         const hoursSincePrompt = (now.getTime() - lastPrompted.getTime()) / (1000 * 60 * 60);
         if (hoursSincePrompt < 24) return false;
       }
-      
+
       return true;
     });
 
@@ -157,7 +157,7 @@ export default function Dashboard() {
         notes: payment.notes || 'Paid from Upcoming Payments',
         isRecurring: false
       });
-      
+
       await deleteUpcomingPayment(payment.id);
       setCurrentOverduePayment(null);
     } catch (error) {
@@ -226,7 +226,7 @@ export default function Dashboard() {
           >
             <View className="flex-row justify-between items-start mb-2">
               <Text className="text-white/70 text-[14px] font-medium flex-1 mr-2 pt-1">Total Spendings for {currentMonthName}</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center gap-1 shrink-0"
                 onPress={() => setIsMonthlySpendingsModalVisible(true)}
               >
@@ -234,7 +234,7 @@ export default function Dashboard() {
                 <Ionicons name="chevron-forward" size={14} color="#ffffff" />
               </TouchableOpacity>
             </View>
-            
+
             <Text className="text-white text-[32px] font-bold">₱{currentMonthBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
           </LinearGradient>
 
@@ -304,9 +304,9 @@ export default function Dashboard() {
             ))}
           </ScrollView>
 
-          {/* Recent Transections */}
+          {/* Recent Transactions */}
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-[18px] font-bold text-brand-dark">Recent Transections</Text>
+            <Text className="text-[18px] font-bold text-brand-dark">Recent Transactions</Text>
             <TouchableOpacity onPress={() => setIsSeeAllTransactionsVisible(true)}>
               <Text className="text-[14px] text-gray-400 font-medium">See all</Text>
             </TouchableOpacity>
@@ -321,9 +321,6 @@ export default function Dashboard() {
               recentTransactions.map((exp) => (
                 <View key={exp.id} className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-4">
-                    <View className="w-12 h-12 bg-brand-card-bg rounded-full justify-center items-center border border-[#333333]">
-                      <Ionicons name={getCategoryIcon(exp.category) as any} size={20} color="#ffffff" />
-                    </View>
                     <View>
                       <Text className="text-[16px] font-bold text-brand-dark">{exp.name || exp.category}</Text>
                       <Text className="text-[12px] text-gray-400 mt-1">{exp.date}</Text>
@@ -385,7 +382,7 @@ export default function Dashboard() {
         </View>
       </Modal>
 
-      <SeeAllUpcomingModal 
+      <SeeAllUpcomingModal
         visible={isSeeAllUpcomingVisible}
         onClose={() => setIsSeeAllUpcomingVisible(false)}
         payments={upcomingPayments}
