@@ -57,6 +57,13 @@ try {
 }
 
 const db = firebase.firestore();
+try {
+  db.settings({
+    experimentalForceLongPolling: true,
+  });
+} catch (e) {
+  console.log('[Firebase] Firestore settings error:', e);
+}
 const storage = firebase.storage();
 
 // Initialize the modular auth with AsyncStorage to enable persistence
