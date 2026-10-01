@@ -91,6 +91,17 @@ class SyncService {
 
   public async processQueue(): Promise<void> {
     if (this.isProcessing || !this.isOnline) return;
+
+    try {
+      const { auth } = require('../config/firebase');
+      if (!auth?.currentUser) {
+        console.log('[SyncService] Skipping queue processing: User not logged in yet.');
+        return;
+      }
+    } catch (err) {
+      return;
+    }
+
     this.isProcessing = true;
 
     try {
@@ -107,13 +118,17 @@ class SyncService {
       for (let i = 0; i < queue.length; i++) {
         const action = queue[i];
         try {
-          await this.executeAction(action);
+          const actionPromise = this.executeAction(action);
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Action execution timeout')), 8000)
+          );
+          await Promise.race([actionPromise, timeoutPromise]);
+
           // Remove from new queue on success
           const idx = newQueue.findIndex(a => a.id === action.id);
           if (idx !== -1) newQueue.splice(idx, 1);
         } catch (e: any) {
           console.error(`Failed to process action ${action.id}:`, e);
-          // If it's a network error, stop processing and try again later
           if (!this.isOnline) {
             break;
           }

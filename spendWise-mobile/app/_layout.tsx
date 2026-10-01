@@ -8,16 +8,25 @@ import { auth } from '../src/config/firebase';
 import '../src/services/syncService'; // Initialize offline sync listener
 import UpdateModal from '../src/components/UpdateModal';
 import { CustomAlertProvider } from '../src/components/CustomAlertProvider';
+import DebugErrorModal from '../src/components/DebugErrorModal';
+import { handleAppError } from '../src/services/errorHandler';
 
-// Global error reference so we can trigger the modal from outside React
+// Global error reference
 let showGlobalError: ((error: Error) => void) | null = null;
 
+// Global error handler for uncaught exceptions in React Native
 if (typeof ErrorUtils !== 'undefined') {
+  const originalHandler = ErrorUtils.getGlobalHandler();
   ErrorUtils.setGlobalHandler((error, isFatal) => {
+    handleAppError(error, {
+      category: 'Runtime',
+      operation: isFatal ? 'Fatal Runtime Crash' : 'Unhandled Runtime Exception',
+    });
     if (showGlobalError) {
       showGlobalError(error);
-    } else {
-      Alert.alert('Fatal Error', `${error.name}: ${error.message}\n\n${error.stack}`);
+    }
+    if (originalHandler) {
+      originalHandler(error, isFatal);
     }
   });
 }
@@ -34,11 +43,21 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("React Error Boundary caught an error:", error, errorInfo);
+    handleAppError(error, {
+      category: 'Runtime',
+      operation: 'React Component Tree Crash',
+      additionalData: errorInfo,
+    });
   }
 
   render() {
     if (this.state.hasError && this.state.error) {
-      return <GlobalErrorModal error={this.state.error} onDismiss={() => this.setState({ hasError: false, error: null })} />;
+      return (
+        <>
+          <GlobalErrorModal error={this.state.error} onDismiss={() => this.setState({ hasError: false, error: null })} />
+          <DebugErrorModal />
+        </>
+      );
     }
     return this.props.children;
   }
@@ -123,6 +142,7 @@ function LayoutContent() {
           <Stack.Screen name="history" />
         </Stack>
         <UpdateModal />
+        <DebugErrorModal />
       </CustomAlertProvider>
       <GlobalErrorModal error={globalError} onDismiss={() => setGlobalError(null)} />
     </>

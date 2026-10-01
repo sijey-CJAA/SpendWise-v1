@@ -7,6 +7,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCustomAlert } from '../components/CustomAlertProvider';
 import { LinearGradient } from 'expo-linear-gradient';
+import DeveloperDiagnosticsModal from '../components/DeveloperDiagnosticsModal';
+import { handleAppError } from '../services/errorHandler';
 
 export default function Login() {
   const router = useRouter();
@@ -17,6 +19,7 @@ export default function Login() {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
   const { showAlert } = useCustomAlert();
 
   useEffect(() => {
@@ -50,6 +53,11 @@ export default function Login() {
       }
       router.replace('/dashboard');
     } catch (error: any) {
+      handleAppError(error, {
+        category: 'Authentication',
+        operation: isLoginMode ? 'User Sign In' : 'User Registration',
+        additionalData: { email: trimmedEmail }
+      });
       showAlert('Authentication Failed', error.message);
     } finally {
       setIsLoading(false);
@@ -67,6 +75,18 @@ export default function Login() {
           keyboardShouldPersistTaps="always"
           showsVerticalScrollIndicator={false}
         >
+          {/* Top Diagnostics Button */}
+          <View className="flex-row justify-end mb-2">
+            <TouchableOpacity 
+              onPress={() => setShowDiagnostics(true)}
+              className="flex-row items-center bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="construct-outline" size={14} color="#60a5fa" />
+              <Text className="text-slate-400 text-xs font-semibold ml-1.5">Diagnostics</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Header Section */}
           <View className="items-center mb-10">
             {firebaseInitError && (
@@ -223,6 +243,7 @@ export default function Login() {
 
         </ScrollView>
       </KeyboardAvoidingView>
+      <DeveloperDiagnosticsModal visible={showDiagnostics} onClose={() => setShowDiagnostics(false)} />
     </SafeAreaView>
   );
 }

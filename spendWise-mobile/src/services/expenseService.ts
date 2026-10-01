@@ -1,6 +1,7 @@
 import { db, auth } from '../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { syncService } from './syncService';
+import { handleAppError, recordSuccessfulRead, recordSuccessfulWrite } from './errorHandler';
 
 const CACHE_KEYS = {
   EXPENSES: '@expenses_cache',
@@ -40,15 +41,25 @@ export interface ExpenseData {
   isRecurring: boolean;
 }
 
+/**
+ * Add Expense
+ * User submits -> Validate -> Attempt Firestore write
+ * If Firestore succeeds -> Record diagnostic, Update UI cache
+ * If Firestore fails -> Show DebugErrorModal via handleAppError, throw error (do not pretend save succeeded)
+ */
 export const addExpense = async (expenseData: ExpenseData, isSyncing = false) => {
   const user = auth.currentUser;
-  if (!user) throw new Error('User must be logged in to add an expense.');
+  if (!user) {
+    const err = new Error('User must be logged in to add an expense.');
+    handleAppError(err, { category: 'Authentication', operation: 'Add Expense - Auth Check' });
+    throw err;
+  }
 
+  // If explicitly offline, queue for sync
   if (!isSyncing && !syncService.getIsOnline()) {
     const tempId = 'temp_' + Date.now().toString();
     const newExpense = { ...expenseData, userId: user.uid, createdAt: new Date().toISOString(), id: tempId };
     
-    // Optimistic Update
     cachedExpenses.unshift(newExpense);
     await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
     notifyExpenses();
@@ -57,49 +68,51 @@ export const addExpense = async (expenseData: ExpenseData, isSyncing = false) =>
     return tempId;
   }
 
+  const newDoc = {
+    ...expenseData,
+    userId: user.uid,
+    createdAt: new Date().toISOString(),
+  };
+
   try {
-    const newDoc = {
-      ...expenseData,
-      userId: user.uid,
-      createdAt: new Date().toISOString(),
-    };
+    // Attempt Firestore write directly
+    const docRef = await db.collection('expenses').add(newDoc);
     
-    if (isSyncing) {
-      const docRef = await db.collection('expenses').add(newDoc);
-      return docRef.id;
+    // Record diagnostic success
+    recordSuccessfulWrite('expenses', docRef.id);
+
+    // Update UI state and persistent cache only upon success
+    if (!isSyncing) {
+      cachedExpenses.unshift({ ...newDoc, id: docRef.id });
+      await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
+      notifyExpenses();
     }
 
-    const tempId = 'temp_' + Date.now().toString();
-    
-    // Optimistic UI update for online mode
-    cachedExpenses.unshift({ ...newDoc, id: tempId });
-    await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
-    notifyExpenses();
-
-    // Fire and forget the actual add to prevent freezing UI on slow networks
-    db.collection('expenses').add(newDoc).then(async (docRef) => {
-        // Update the tempId to the real id
-        cachedExpenses = cachedExpenses.map(exp => exp.id === tempId ? { ...exp, id: docRef.id } : exp);
-        await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
-        notifyExpenses();
-    }).catch(async (error) => {
-        console.warn("Online add failed, queueing offline sync:", error);
-        await syncService.queueAction('ADD_EXPENSE', expenseData);
+    return docRef.id;
+  } catch (error: any) {
+    // Log and route through centralized debug error modal
+    handleAppError(error, {
+      category: 'Firestore Write',
+      operation: 'Adding Expense',
+      target: 'expenses',
+      additionalData: expenseData,
     });
 
-    return tempId;
-  } catch (error) {
     if (!isSyncing) {
+      // Also queue into syncService so user data is not lost if offline
       await syncService.queueAction('ADD_EXPENSE', expenseData);
-      return 'temp_' + Date.now();
     }
+
+    // Re-throw so caller (AddExpenseModal) does not pretend save succeeded
     throw error;
   }
 };
 
+/**
+ * Update Expense
+ */
 export const updateExpense = async (expenseId: string, expenseData: Partial<ExpenseData>, isSyncing = false) => {
   if (!isSyncing && !syncService.getIsOnline()) {
-    // Optimistic Update
     cachedExpenses = cachedExpenses.map(exp => exp.id === expenseId ? { ...exp, ...expenseData } : exp);
     await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
     notifyExpenses();
@@ -110,16 +123,32 @@ export const updateExpense = async (expenseId: string, expenseData: Partial<Expe
 
   try {
     await db.collection('expenses').doc(expenseId).update(expenseData);
-  } catch (error) {
+    recordSuccessfulWrite('expenses', expenseId);
+
+    if (!isSyncing) {
+      cachedExpenses = cachedExpenses.map(exp => exp.id === expenseId ? { ...exp, ...expenseData } : exp);
+      await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
+      notifyExpenses();
+    }
+  } catch (error: any) {
+    handleAppError(error, {
+      category: 'Firestore Write',
+      operation: 'Updating Expense',
+      target: `expenses/${expenseId}`,
+      additionalData: expenseData,
+    });
     if (!isSyncing) {
       await syncService.queueAction('UPDATE_EXPENSE', { id: expenseId, data: expenseData });
-    } else throw error;
+    }
+    throw error;
   }
 };
 
+/**
+ * Delete Expense
+ */
 export const deleteExpense = async (expenseId: string, isSyncing = false) => {
   if (!isSyncing && !syncService.getIsOnline()) {
-    // Optimistic Update
     cachedExpenses = cachedExpenses.filter(exp => exp.id !== expenseId);
     await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
     notifyExpenses();
@@ -130,29 +159,55 @@ export const deleteExpense = async (expenseId: string, isSyncing = false) => {
 
   try {
     await db.collection('expenses').doc(expenseId).delete();
-  } catch (error) {
+    recordSuccessfulWrite('expenses (delete)', expenseId);
+
+    if (!isSyncing) {
+      cachedExpenses = cachedExpenses.filter(exp => exp.id !== expenseId);
+      await AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(cachedExpenses));
+      notifyExpenses();
+    }
+  } catch (error: any) {
+    handleAppError(error, {
+      category: 'Firestore Write',
+      operation: 'Deleting Expense',
+      target: `expenses/${expenseId}`,
+    });
     if (!isSyncing) {
       await syncService.queueAction('DELETE_EXPENSE', { id: expenseId });
-    } else throw error;
+    }
+    throw error;
   }
 };
 
+/**
+ * Subscribe to User Expenses with real-time sync and diagnostics
+ */
 export const subscribeToExpenses = (userId: string, callback: (expenses: any[]) => void) => {
   expensesSubscribers.add(callback);
   
-  // Initial load from cache
+  // Initial load from local persistent cache
   AsyncStorage.getItem(CACHE_KEYS.EXPENSES).then(data => {
     if (data) {
-      cachedExpenses = JSON.parse(data);
-      callback([...cachedExpenses]);
+      try {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          cachedExpenses = parsed;
+          callback([...cachedExpenses]);
+        }
+      } catch (e) {
+        console.error("Error parsing cached expenses:", e);
+      }
     }
   });
 
   const unsubscribe = db.collection('expenses')
     .where('userId', '==', userId)
     .onSnapshot(
-      async (snapshot) => {
-        let expenses = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      async (snapshot: any) => {
+        let serverExpenses = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
+        recordSuccessfulRead(`expenses (${serverExpenses.length} items)`);
+
+        let finalExpenses = [...serverExpenses];
         
         try {
           const queue = await syncService.getQueue();
@@ -163,36 +218,54 @@ export const subscribeToExpenses = (userId: string, callback: (expenses: any[]) 
           const pendingDeletes = queue.filter(a => a.type === 'DELETE_EXPENSE').map(a => a.payload.id);
           const pendingUpdates = queue.filter(a => a.type === 'UPDATE_EXPENSE');
           
-          expenses = expenses.filter(exp => !pendingDeletes.includes(exp.id));
+          finalExpenses = finalExpenses.filter(exp => !pendingDeletes.includes(exp.id));
           
           pendingUpdates.forEach(update => {
-            const idx = expenses.findIndex(e => e.id === update.payload.id);
+            const idx = finalExpenses.findIndex(e => e.id === update.payload.id);
             if (idx !== -1) {
-              expenses[idx] = { ...expenses[idx], ...update.payload.data };
+              finalExpenses[idx] = { ...finalExpenses[idx], ...update.payload.data };
             }
           });
           
-          expenses = [...expenses, ...pendingAdds];
+          // Preserve any unconfirmed optimistic expenses already present in cachedExpenses
+          const localOptimistic = cachedExpenses.filter(e => 
+            e.id && String(e.id).startsWith('temp_') &&
+            !pendingDeletes.includes(e.id) &&
+            !pendingAdds.some(pa => pa.id === e.id) &&
+            !serverExpenses.some((se: any) => se.name === e.name && Number(se.amount) === Number(e.amount) && se.date === e.date)
+          );
+
+          finalExpenses = [...finalExpenses, ...pendingAdds, ...localOptimistic];
+
+          // Deduplicate by ID
+          const seen = new Set();
+          finalExpenses = finalExpenses.filter(e => {
+            if (seen.has(e.id)) return false;
+            seen.add(e.id);
+            return true;
+          });
         } catch (error) {
           console.error("Error applying offline queue to expenses:", error);
         }
 
-        expenses.sort((a: any, b: any) => {
+        finalExpenses.sort((a: any, b: any) => {
           const dateA = new Date(a.createdAt || a.date).getTime();
           const dateB = new Date(b.createdAt || b.date).getTime();
           return dateB - dateA;
         });
 
-        cachedExpenses = expenses;
-        AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(expenses));
+        cachedExpenses = finalExpenses;
+        AsyncStorage.setItem(CACHE_KEYS.EXPENSES, JSON.stringify(finalExpenses));
         notifyExpenses();
       },
-      (error) => {
-        console.error("Error subscribing to expenses: ", error);
-        import('react-native').then(({ Alert }) => {
-          Alert.alert("Firebase Error", error.message || "Failed to load expenses");
+      (error: any) => {
+        // Route read failures to centralized error handler
+        handleAppError(error, {
+          category: 'Firestore Read',
+          operation: 'Loading User Expenses',
+          target: `expenses (userId=${userId})`,
         });
-        // Ensure UI doesn't hang forever
+        // Ensure UI continues showing cached data
         callback([...cachedExpenses]);
       }
     );
@@ -214,9 +287,16 @@ export interface UpcomingPaymentData {
   lastPromptedAt?: string;
 }
 
+/**
+ * Add Upcoming Payment
+ */
 export const addUpcomingPayment = async (paymentData: UpcomingPaymentData, isSyncing = false) => {
   const user = auth.currentUser;
-  if (!user) throw new Error('User must be logged in.');
+  if (!user) {
+    const err = new Error('User must be logged in to add upcoming payment.');
+    handleAppError(err, { category: 'Authentication', operation: 'Add Upcoming Payment - Auth Check' });
+    throw err;
+  }
 
   if (!isSyncing && !syncService.getIsOnline()) {
     const tempId = 'temp_' + Date.now().toString();
@@ -231,37 +311,66 @@ export const addUpcomingPayment = async (paymentData: UpcomingPaymentData, isSyn
     return tempId;
   }
 
+  const newDoc = {
+    ...paymentData,
+    userId: user.uid,
+    createdAt: new Date().toISOString(),
+  };
+
   try {
-    const docRef = await db.collection('upcomingPayments').add({
-      ...paymentData,
-      userId: user.uid,
-      createdAt: new Date().toISOString(),
-    });
+    const docRef = await db.collection('upcomingPayments').add(newDoc);
+    recordSuccessfulWrite('upcomingPayments', docRef.id);
+
+    if (!isSyncing) {
+      cachedUpcomingPayments.push({ ...newDoc, id: docRef.id });
+      cachedUpcomingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      await AsyncStorage.setItem(CACHE_KEYS.UPCOMING_PAYMENTS, JSON.stringify(cachedUpcomingPayments));
+      notifyUpcomingPayments();
+    }
+
     return docRef.id;
-  } catch (error) {
+  } catch (error: any) {
+    handleAppError(error, {
+      category: 'Firestore Write',
+      operation: 'Adding Upcoming Payment',
+      target: 'upcomingPayments',
+      additionalData: paymentData,
+    });
     if (!isSyncing) {
       await syncService.queueAction('ADD_UPCOMING_PAYMENT', paymentData);
-      return 'temp_' + Date.now();
     }
     throw error;
   }
 };
 
+/**
+ * Subscribe to Upcoming Payments
+ */
 export const subscribeToUpcomingPayments = (userId: string, callback: (payments: any[]) => void) => {
   upcomingPaymentsSubscribers.add(callback);
 
   AsyncStorage.getItem(CACHE_KEYS.UPCOMING_PAYMENTS).then(data => {
     if (data) {
-      cachedUpcomingPayments = JSON.parse(data);
-      callback([...cachedUpcomingPayments]);
+      try {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          cachedUpcomingPayments = parsed;
+          callback([...cachedUpcomingPayments]);
+        }
+      } catch (e) {
+        console.error("Error parsing cached upcoming payments:", e);
+      }
     }
   });
 
   const unsubscribe = db.collection('upcomingPayments')
     .where('userId', '==', userId)
     .onSnapshot(
-      async (snapshot) => {
-        let payments = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      async (snapshot: any) => {
+        let serverPayments = snapshot.docs.map((doc: any) => ({ ...doc.data(), id: doc.id }));
+        recordSuccessfulRead(`upcomingPayments (${serverPayments.length} items)`);
+
+        let finalPayments = [...serverPayments];
         
         try {
           const queue = await syncService.getQueue();
@@ -272,27 +381,49 @@ export const subscribeToUpcomingPayments = (userId: string, callback: (payments:
           const pendingDeletes = queue.filter(a => a.type === 'DELETE_UPCOMING_PAYMENT').map(a => a.payload.id);
           const pendingUpdates = queue.filter(a => a.type === 'UPDATE_UPCOMING_PAYMENT');
           
-          payments = payments.filter(payment => !pendingDeletes.includes(payment.id));
+          finalPayments = finalPayments.filter(payment => !pendingDeletes.includes(payment.id));
           
           pendingUpdates.forEach(update => {
-            const idx = payments.findIndex(p => p.id === update.payload.id);
+            const idx = finalPayments.findIndex(p => p.id === update.payload.id);
             if (idx !== -1) {
-              payments[idx] = { ...payments[idx], ...update.payload.data };
+              finalPayments[idx] = { ...finalPayments[idx], ...update.payload.data };
             }
           });
           
-          payments = [...payments, ...pendingAdds];
+          // Preserve any unconfirmed optimistic upcoming payments
+          const localOptimistic = cachedUpcomingPayments.filter(p => 
+            p.id && String(p.id).startsWith('temp_') &&
+            !pendingDeletes.includes(p.id) &&
+            !pendingAdds.some(pa => pa.id === p.id) &&
+            !serverPayments.some((sp: any) => sp.name === p.name && sp.dueDate === p.dueDate)
+          );
+
+          finalPayments = [...finalPayments, ...pendingAdds, ...localOptimistic];
+
+          const seen = new Set();
+          finalPayments = finalPayments.filter(p => {
+            if (seen.has(p.id)) return false;
+            seen.add(p.id);
+            return true;
+          });
         } catch (error) {
           console.error("Error applying offline queue to upcoming payments:", error);
         }
 
-        payments.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        finalPayments.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-        cachedUpcomingPayments = payments;
-        AsyncStorage.setItem(CACHE_KEYS.UPCOMING_PAYMENTS, JSON.stringify(payments));
+        cachedUpcomingPayments = finalPayments;
+        AsyncStorage.setItem(CACHE_KEYS.UPCOMING_PAYMENTS, JSON.stringify(finalPayments));
         notifyUpcomingPayments();
       },
-      (error) => console.error("Error subscribing to upcoming payments: ", error)
+      (error: any) => {
+        handleAppError(error, {
+          category: 'Firestore Read',
+          operation: 'Loading Upcoming Payments',
+          target: `upcomingPayments (userId=${userId})`,
+        });
+        callback([...cachedUpcomingPayments]);
+      }
     );
 
   return () => {
@@ -301,6 +432,9 @@ export const subscribeToUpcomingPayments = (userId: string, callback: (payments:
   };
 };
 
+/**
+ * Update Upcoming Payment
+ */
 export const updateUpcomingPayment = async (paymentId: string, paymentData: Partial<UpcomingPaymentData>, isSyncing = false) => {
   if (!isSyncing && !syncService.getIsOnline()) {
     cachedUpcomingPayments = cachedUpcomingPayments.map(p => p.id === paymentId ? { ...p, ...paymentData } : p);
@@ -313,13 +447,30 @@ export const updateUpcomingPayment = async (paymentId: string, paymentData: Part
 
   try {
     await db.collection('upcomingPayments').doc(paymentId).update(paymentData);
-  } catch (error) {
+    recordSuccessfulWrite('upcomingPayments', paymentId);
+
+    if (!isSyncing) {
+      cachedUpcomingPayments = cachedUpcomingPayments.map(p => p.id === paymentId ? { ...p, ...paymentData } : p);
+      await AsyncStorage.setItem(CACHE_KEYS.UPCOMING_PAYMENTS, JSON.stringify(cachedUpcomingPayments));
+      notifyUpcomingPayments();
+    }
+  } catch (error: any) {
+    handleAppError(error, {
+      category: 'Firestore Write',
+      operation: 'Updating Upcoming Payment',
+      target: `upcomingPayments/${paymentId}`,
+      additionalData: paymentData,
+    });
     if (!isSyncing) {
       await syncService.queueAction('UPDATE_UPCOMING_PAYMENT', { id: paymentId, data: paymentData });
-    } else throw error;
+    }
+    throw error;
   }
 };
 
+/**
+ * Delete Upcoming Payment
+ */
 export const deleteUpcomingPayment = async (paymentId: string, isSyncing = false) => {
   if (!isSyncing && !syncService.getIsOnline()) {
     cachedUpcomingPayments = cachedUpcomingPayments.filter(p => p.id !== paymentId);
@@ -332,10 +483,23 @@ export const deleteUpcomingPayment = async (paymentId: string, isSyncing = false
 
   try {
     await db.collection('upcomingPayments').doc(paymentId).delete();
-  } catch (error) {
+    recordSuccessfulWrite('upcomingPayments (delete)', paymentId);
+
+    if (!isSyncing) {
+      cachedUpcomingPayments = cachedUpcomingPayments.filter(p => p.id !== paymentId);
+      await AsyncStorage.setItem(CACHE_KEYS.UPCOMING_PAYMENTS, JSON.stringify(cachedUpcomingPayments));
+      notifyUpcomingPayments();
+    }
+  } catch (error: any) {
+    handleAppError(error, {
+      category: 'Firestore Write',
+      operation: 'Deleting Upcoming Payment',
+      target: `upcomingPayments/${paymentId}`,
+    });
     if (!isSyncing) {
       await syncService.queueAction('DELETE_UPCOMING_PAYMENT', { id: paymentId });
-    } else throw error;
+    }
+    throw error;
   }
 };
 
@@ -359,9 +523,16 @@ export interface SharedExpenseData {
   seenBy?: string[];
 }
 
+/**
+ * Add Shared Expense
+ */
 export const addSharedExpense = async (expenseData: SharedExpenseData, isSyncing = false) => {
   const user = auth.currentUser;
-  if (!user) throw new Error('User must be logged in.');
+  if (!user) {
+    const err = new Error('User must be logged in to add shared expense.');
+    handleAppError(err, { category: 'Authentication', operation: 'Add Shared Expense - Auth Check' });
+    throw err;
+  }
 
   if (!isSyncing && !syncService.getIsOnline()) {
     const tempId = 'temp_' + Date.now().toString();
@@ -383,40 +554,65 @@ export const addSharedExpense = async (expenseData: SharedExpenseData, isSyncing
     return tempId;
   }
 
+  const newDoc = {
+    ...expenseData,
+    userId: user.uid,
+    creatorEmail: user.email,
+    involvedEmails: [user.email, expenseData.personEmail.toLowerCase()],
+    seenBy: [user.email],
+    createdAt: new Date().toISOString(),
+  };
+
   try {
-    const docRef = await db.collection('sharedExpenses').add({
-      ...expenseData,
-      userId: user.uid,
-      creatorEmail: user.email,
-      involvedEmails: [user.email, expenseData.personEmail.toLowerCase()],
-      seenBy: [user.email],
-      createdAt: new Date().toISOString(),
-    });
+    const docRef = await db.collection('sharedExpenses').add(newDoc);
+    recordSuccessfulWrite('sharedExpenses', docRef.id);
+
+    if (!isSyncing) {
+      cachedSharedExpenses.push({ ...newDoc, id: docRef.id });
+      await AsyncStorage.setItem(CACHE_KEYS.SHARED_EXPENSES, JSON.stringify(cachedSharedExpenses));
+      notifySharedExpenses();
+    }
+
     return docRef.id;
-  } catch (error) {
+  } catch (error: any) {
+    handleAppError(error, {
+      category: 'Firestore Write',
+      operation: 'Adding Shared Expense',
+      target: 'sharedExpenses',
+      additionalData: expenseData,
+    });
     if (!isSyncing) {
       await syncService.queueAction('ADD_SHARED_EXPENSE', expenseData);
-      return 'temp_' + Date.now();
     }
     throw error;
   }
 };
 
+/**
+ * Subscribe to Shared Expenses
+ */
 export const subscribeToSharedExpenses = (userEmail: string, callback: (expenses: any[]) => void) => {
   sharedExpensesSubscribers.add(callback);
 
   AsyncStorage.getItem(CACHE_KEYS.SHARED_EXPENSES).then(data => {
     if (data) {
-      cachedSharedExpenses = JSON.parse(data);
-      callback([...cachedSharedExpenses]);
+      try {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          cachedSharedExpenses = parsed;
+          callback([...cachedSharedExpenses]);
+        }
+      } catch (e) {
+        console.error("Error parsing cached shared expenses:", e);
+      }
     }
   });
 
   const unsubscribe = db.collection('sharedExpenses')
     .where('involvedEmails', 'array-contains', userEmail.toLowerCase())
     .onSnapshot(
-      async (snapshot) => {
-        let expenses = snapshot.docs.map(doc => {
+      async (snapshot: any) => {
+        let serverExpenses = snapshot.docs.map((doc: any) => {
           const data = doc.data();
           const isCreator = data.creatorEmail === userEmail;
           let type = data.type;
@@ -427,6 +623,9 @@ export const subscribeToSharedExpenses = (userEmail: string, callback: (expenses
           }
           return { ...data, id: doc.id, type, personEmail };
         });
+        recordSuccessfulRead(`sharedExpenses (${serverExpenses.length} items)`);
+
+        let finalExpenses = [...serverExpenses];
         
         try {
           const queue = await syncService.getQueue();
@@ -434,7 +633,6 @@ export const subscribeToSharedExpenses = (userEmail: string, callback: (expenses
             .filter(a => a.type === 'ADD_SHARED_EXPENSE')
             .map(a => {
               const data = a.payload;
-              // format it like from server
               let type = data.type;
               let personEmail = data.personEmail;
               return { ...data, id: 'temp_' + a.id, type, personEmail };
@@ -443,27 +641,49 @@ export const subscribeToSharedExpenses = (userEmail: string, callback: (expenses
           const pendingDeletes = queue.filter(a => a.type === 'DELETE_SHARED_EXPENSE').map(a => a.payload.id);
           const pendingUpdates = queue.filter(a => a.type === 'UPDATE_SHARED_EXPENSE');
           
-          expenses = expenses.filter(exp => !pendingDeletes.includes(exp.id));
+          finalExpenses = finalExpenses.filter(exp => !pendingDeletes.includes(exp.id));
           
           pendingUpdates.forEach(update => {
-            const idx = expenses.findIndex(e => e.id === update.payload.id);
+            const idx = finalExpenses.findIndex(e => e.id === update.payload.id);
             if (idx !== -1) {
-              expenses[idx] = { ...expenses[idx], ...update.payload.data };
+              finalExpenses[idx] = { ...finalExpenses[idx], ...update.payload.data };
             }
           });
           
-          expenses = [...expenses, ...pendingAdds];
+          // Preserve any unconfirmed optimistic shared expenses
+          const localOptimistic = cachedSharedExpenses.filter(e => 
+            e.id && String(e.id).startsWith('temp_') &&
+            !pendingDeletes.includes(e.id) &&
+            !pendingAdds.some(pa => pa.id === e.id) &&
+            !serverExpenses.some((se: any) => se.description === e.description && Number(se.amount) === Number(e.amount))
+          );
+
+          finalExpenses = [...finalExpenses, ...pendingAdds, ...localOptimistic];
+
+          const seen = new Set();
+          finalExpenses = finalExpenses.filter(e => {
+            if (seen.has(e.id)) return false;
+            seen.add(e.id);
+            return true;
+          });
         } catch (error) {
           console.error("Error applying offline queue to shared expenses:", error);
         }
         
-        expenses.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        finalExpenses.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-        cachedSharedExpenses = expenses;
-        AsyncStorage.setItem(CACHE_KEYS.SHARED_EXPENSES, JSON.stringify(expenses));
+        cachedSharedExpenses = finalExpenses;
+        AsyncStorage.setItem(CACHE_KEYS.SHARED_EXPENSES, JSON.stringify(finalExpenses));
         notifySharedExpenses();
       },
-      (error) => console.error("Error subscribing to shared expenses: ", error)
+      (error: any) => {
+        handleAppError(error, {
+          category: 'Firestore Read',
+          operation: 'Loading Shared Expenses',
+          target: `sharedExpenses (user=${userEmail})`,
+        });
+        callback([...cachedSharedExpenses]);
+      }
     );
 
   return () => {
@@ -472,6 +692,9 @@ export const subscribeToSharedExpenses = (userEmail: string, callback: (expenses
   };
 };
 
+/**
+ * Update Shared Expense
+ */
 export const updateSharedExpense = async (expenseId: string, expenseData: Partial<SharedExpenseData>, isSyncing = false) => {
   if (!isSyncing && !syncService.getIsOnline()) {
     cachedSharedExpenses = cachedSharedExpenses.map(exp => exp.id === expenseId ? { ...exp, ...expenseData } : exp);
@@ -484,13 +707,30 @@ export const updateSharedExpense = async (expenseId: string, expenseData: Partia
 
   try {
     await db.collection('sharedExpenses').doc(expenseId).update(expenseData);
-  } catch (error) {
+    recordSuccessfulWrite('sharedExpenses', expenseId);
+
+    if (!isSyncing) {
+      cachedSharedExpenses = cachedSharedExpenses.map(exp => exp.id === expenseId ? { ...exp, ...expenseData } : exp);
+      await AsyncStorage.setItem(CACHE_KEYS.SHARED_EXPENSES, JSON.stringify(cachedSharedExpenses));
+      notifySharedExpenses();
+    }
+  } catch (error: any) {
+    handleAppError(error, {
+      category: 'Firestore Write',
+      operation: 'Updating Shared Expense',
+      target: `sharedExpenses/${expenseId}`,
+      additionalData: expenseData,
+    });
     if (!isSyncing) {
       await syncService.queueAction('UPDATE_SHARED_EXPENSE', { id: expenseId, data: expenseData });
-    } else throw error;
+    }
+    throw error;
   }
 };
 
+/**
+ * Delete Shared Expense
+ */
 export const deleteSharedExpense = async (expenseId: string, isSyncing = false) => {
   if (!isSyncing && !syncService.getIsOnline()) {
     cachedSharedExpenses = cachedSharedExpenses.filter(exp => exp.id !== expenseId);
@@ -503,9 +743,22 @@ export const deleteSharedExpense = async (expenseId: string, isSyncing = false) 
 
   try {
     await db.collection('sharedExpenses').doc(expenseId).delete();
-  } catch (error) {
+    recordSuccessfulWrite('sharedExpenses (delete)', expenseId);
+
+    if (!isSyncing) {
+      cachedSharedExpenses = cachedSharedExpenses.filter(exp => exp.id !== expenseId);
+      await AsyncStorage.setItem(CACHE_KEYS.SHARED_EXPENSES, JSON.stringify(cachedSharedExpenses));
+      notifySharedExpenses();
+    }
+  } catch (error: any) {
+    handleAppError(error, {
+      category: 'Firestore Write',
+      operation: 'Deleting Shared Expense',
+      target: `sharedExpenses/${expenseId}`,
+    });
     if (!isSyncing) {
       await syncService.queueAction('DELETE_SHARED_EXPENSE', { id: expenseId });
-    } else throw error;
+    }
+    throw error;
   }
 };

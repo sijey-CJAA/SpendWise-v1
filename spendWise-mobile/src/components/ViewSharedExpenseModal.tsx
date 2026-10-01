@@ -105,7 +105,9 @@ export default function ViewSharedExpenseModal({ visible, onClose, expense }: Vi
 
       // Update Firestore
       await updateSharedExpense(expense.id, { receiptUrl: downloadURL });
-    } catch (error) {
+    } catch (error: any) {
+      const { handleAppError } = require('../services/errorHandler');
+      handleAppError(error, { category: 'Storage', operation: 'Upload Receipt', target: `receipts/${expense.id}` });
       showAlert('Error', 'Failed to upload receipt.');
       console.error(error);
     } finally {

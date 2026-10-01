@@ -4,11 +4,14 @@ import { Image as ExpoImage } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { auth, signOut } from '../config/firebase';
+import DeveloperDiagnosticsModal from './DeveloperDiagnosticsModal';
+import { handleAppError } from '../services/errorHandler';
 
 export default function TopNavBar() {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
   const menuAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -36,7 +39,8 @@ export default function TopNavBar() {
     try {
       await signOut(auth);
       router.replace('/');
-    } catch (error) {
+    } catch (error: any) {
+      handleAppError(error, { category: 'Authentication', operation: 'User Sign Out' });
       console.error('Logout error:', error);
     }
   };
@@ -114,6 +118,17 @@ export default function TopNavBar() {
 
             <TouchableOpacity 
               className="flex-row items-center py-4 border-b border-surface-variant"
+              onPress={() => {
+                setIsMenuOpen(false);
+                setShowDiagnostics(true);
+              }}
+            >
+              <Ionicons name="construct-outline" size={24} color="#3b82f6" />
+              <Text className="ml-4 text-[18px] text-blue-500 font-semibold">Diagnostics</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              className="flex-row items-center py-4 border-b border-surface-variant"
               onPress={handleLogout}
             >
               <Ionicons name="log-out-outline" size={24} color="#ef4444" />
@@ -122,6 +137,11 @@ export default function TopNavBar() {
           </Animated.View>
         </View>
       </Modal>
+
+      <DeveloperDiagnosticsModal 
+        visible={showDiagnostics} 
+        onClose={() => setShowDiagnostics(false)} 
+      />
     </>
   );
 }
