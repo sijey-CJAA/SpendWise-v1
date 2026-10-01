@@ -312,17 +312,17 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          <View className="flex-col gap-4">
+          <View className="bg-brand-card-bg rounded-[24px] p-5 shadow-sm border border-[#333333]">
             {isLoading ? (
               <ActivityIndicator size="large" color="#683df7" style={{ marginTop: 20 }} />
             ) : recentTransactions.length === 0 ? (
-              <Text className="text-gray-500 text-center mt-4">No transactions yet.</Text>
+              <Text className="text-gray-500 text-center py-4">No transactions yet.</Text>
             ) : (
-              recentTransactions.map((exp) => (
-                <View key={exp.id} className="flex-row items-center justify-between">
+              recentTransactions.map((exp, index) => (
+                <View key={exp.id} className={`flex-row items-center justify-between py-3 ${index < recentTransactions.length - 1 ? 'border-b border-[#333333]' : ''}`}>
                   <View className="flex-row items-center gap-4">
                     <View>
-                      <Text className="text-[16px] font-bold text-brand-dark">{exp.name || exp.category}</Text>
+                      <Text className="text-[16px] font-bold text-white">{exp.name || exp.category}</Text>
                       <Text className="text-[12px] text-gray-400 mt-1">{exp.date}</Text>
                     </View>
                   </View>
