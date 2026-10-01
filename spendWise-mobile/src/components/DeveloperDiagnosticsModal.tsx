@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import Constants from 'expo-constants';
-import { auth, rawDb } from '../config/firebase';
+import { auth, db, app } from '../config/firebase';
 import { 
   getDiagnosticsState, 
   testFirebaseConnection, 
@@ -46,8 +46,8 @@ export default function DeveloperDiagnosticsModal({ visible, onClose }: Develope
   if (!visible) return null;
 
   const user = auth.currentUser;
-  const projectId = rawDb?.app?.options?.projectId || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'spendwise-26986';
-  const appId = rawDb?.app?.options?.appId || '1:767926524621:web:11502fac5d947abc362784';
+  const projectId = (app?.options as any)?.projectId || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'spendwise-26986';
+  const appId = (app?.options as any)?.appId || '1:767926524621:web:11502fac5d947abc362784';
   const appVersion = Constants.expoConfig?.version || '2.0.4';
   const environment = __DEV__ ? 'Development (Metro)' : 'Android Release APK';
 

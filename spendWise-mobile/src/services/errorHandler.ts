@@ -2,17 +2,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import NetInfo from '@react-native-community/netinfo';
 import * as Clipboard from 'expo-clipboard';
-import { auth, rawDb } from '../config/firebase';
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  deleteDoc, 
-  getDocs, 
-  query, 
-  limit, 
-  where 
-} from 'firebase/firestore';
+import { auth, db, app } from '../config/firebase';
 
 export type ErrorCategory = 
   | 'Firestore Write'
@@ -65,7 +55,7 @@ export interface DiagnosticsState {
 // In-memory diagnostic tracker
 const diagnostics: DiagnosticsState = {
   firebaseInitialized: true,
-  firestoreInitialized: !!rawDb,
+  firestoreInitialized: !!db,
   lastSuccessfulRead: null,
   lastSuccessfulWrite: null,
   lastSuccessfulWriteTarget: null,
@@ -172,7 +162,7 @@ export const handleAppError = (error: any, context?: AppErrorContext): AppErrorD
   const target = context?.target;
 
   const user = auth.currentUser;
-  const projectId = rawDb?.app?.options?.projectId || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'spendwise-26986';
+  const projectId = (app?.options as any)?.projectId || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'spendwise-26986';
   const environment = __DEV__ ? 'Development (Metro)' : 'Android Release APK';
   const appVersion = Constants.expoConfig?.version || '2.0.4';
   const platform = `${Platform.OS.toUpperCase()} (API ${Platform.Version || 'N/A'})`;
@@ -266,8 +256,7 @@ export const testFirebaseConnection = async (): Promise<{ success: boolean; mess
   try {
     const user = auth.currentUser;
     // Attempt harmless query on expenses or debug_diagnostics
-    const q = query(collection(rawDb, 'expenses'), limit(1));
-    const snapshot = await getDocs(q);
+    const snapshot = await db.collection('expenses').limit(1).get();
     recordSuccessfulRead('Test Connection Query');
     return {
       success: true,
@@ -296,7 +285,7 @@ export const testFirestoreWrite = async (): Promise<{ success: boolean; message:
   const docPath = `debug_diagnostics/${docId}`;
   
   try {
-    const testRef = doc(rawDb, 'debug_diagnostics', docId);
+    const testRef = db.collection('debug_diagnostics').doc(docId);
     const testData = {
       test: true,
       testedAt: new Date().toISOString(),
@@ -306,12 +295,12 @@ export const testFirestoreWrite = async (): Promise<{ success: boolean; message:
     };
     
     // Write test document
-    await setDoc(testRef, testData);
+    await testRef.set(testData);
     recordSuccessfulWrite('debug_diagnostics', docId);
 
     // Clean up test document
     try {
-      await deleteDoc(testRef);
+      await testRef.delete();
     } catch (cleanupErr) {
       console.warn('Test document cleanup skipped:', cleanupErr);
     }
