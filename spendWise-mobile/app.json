@@ -3,7 +3,7 @@
     "name": "SpendWise",
     "slug": "spendwise-mobile",
     "scheme": "spendwise-mobile",
-    "version": "2.0.7",
+    "version": "2.0.8",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "ios": {
@@ -11,7 +11,7 @@
     },
     "android": {
       "package": "com.spendwise.app",
-      "versionCode": 33,
+      "versionCode": 34,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
