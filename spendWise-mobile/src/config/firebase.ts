@@ -5,6 +5,11 @@ import 'firebase/compat/storage';
 import { initializeAuth } from 'firebase/auth';
 import { getReactNativePersistence } from 'firebase/auth/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { decode, encode } from 'base-64';
+
+// Polyfill btoa and atob for React Native Android Release (Fixes Firestore infinite hanging)
+if (!global.btoa) { global.btoa = encode; }
+if (!global.atob) { global.atob = decode; }
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
