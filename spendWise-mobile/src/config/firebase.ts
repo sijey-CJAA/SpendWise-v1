@@ -37,6 +37,11 @@ initializeAuth(app, {
 // Get the compat auth which will now use the properly configured persistence
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// FIX for Android Release APK infinite loading:
+// Force Firestore to use long-polling instead of WebSockets, which often fail silently in React Native Android release builds.
+db.settings({ experimentalForceLongPolling: true });
+
 const storage = firebase.storage();
 
 // Wrapper functions to maintain compatibility with our Login/Dashboard screens
