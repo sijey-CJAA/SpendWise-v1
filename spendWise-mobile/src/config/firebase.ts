@@ -44,8 +44,11 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // FIX for Android Release APK infinite loading:
-// Force Firestore to use long-polling instead of WebSockets, which often fail silently in React Native Android release builds.
-db.settings({ experimentalForceLongPolling: true });
+// Force Firestore to use long-polling and disable fetch streams, which often fail silently in React Native Android release builds.
+db.settings({ 
+  experimentalForceLongPolling: true,
+  useFetchStreams: false 
+} as any);
 
 const storage = firebase.storage();
 
